@@ -12,6 +12,7 @@
 <meta property="og:type" content="website">
 <meta property="og:image" content="./image/icon.png">
 <meta property="og:url" content="https://udomnylong.github.io/INS/">
+<link rel="icon" href="./image/icon.png" type="image/png">
 <link rel="shortcut icon" href="./image/icon.png" type="image/x-icon">
 <title>Construction DMS</title>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
@@ -37,7 +38,7 @@
   --shadow2:0 2px 12px rgba(0,0,0,0.3);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html{font-size:14px;}
+html{font-size:15px;}
 body{font-family:var(--font-km);background:var(--bg);color:var(--text);min-height:100vh;line-height:1.7;}
 button{font-family:var(--font-km);cursor:pointer;}
 input,select,textarea{font-family:var(--font-km);}
@@ -554,6 +555,7 @@ tbody tr:hover .row-acts{opacity:1;}
     <div class="modal-ft">
       <button class="btn btn-danger btn-sm" id="dtf-delbtn" style="margin-right:auto;display:none;" onclick="deleteRec('dtf')">🗑 លុប</button>
       <button class="btn btn-ghost" onclick="closeModal('modal-dtf')">បោះបង់</button>
+      <button class="btn btn-ghost" id="dtf-printbtn" style="display:none;" onclick="printDTF(editIdx)">🖨 Print</button>
       <button class="btn btn-primary" onclick="saveRec('dtf')">💾 Save → Sheets</button>
     </div>
   </div>
@@ -739,7 +741,7 @@ tbody tr:hover .row-acts{opacity:1;}
 const CFG = {
   // ── Option A: Google Apps Script Web App (ឆាប់ & ងាយ) ──
   // Deploy Code.gs as Web App → Copy URL here
-  apiUrl: 'https://script.google.com/macros/s/AKfycby-9r8LK2YvTrpB9TCmhy9hWC8BnNZ9yDnU_AoiOPK81P6o8UVeb1FBfsV4YVtNeM_oNA/exec',
+  apiUrl: 'https://script.google.com/macros/s/AKfycbyWttdKzdeErLledttsSgbsJX87AbYpONbZ4aXLg1c5Uyqb81rL3r_eiBwVbWr9iIUc2Q/exec',
   token:  'DMS_SECRET_2026',  // same as SECRET_TOKEN in Code.gs
 
   // ── Option B: Direct Sheets API (ត្រូវការ API Key) ──
@@ -1244,7 +1246,7 @@ function renderDtf() {
       <td><span class="badge b-blue" style="font-size:9px;max-width:120px;overflow:hidden;text-overflow:ellipsis;display:inline-block;">${r.typeDoc||'—'}</span></td>
       <td class="td-muted">${r.submitBy||'—'}</td><td class="td-muted">${r.receivedBy||'—'}</td>
       <td class="td-muted">${r.remark||'—'}</td>
-      <td><div class="row-acts"><button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openModal('dtf',${i})">✏</button><button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();confirmDel('dtf',${i})">🗑</button></div></td>
+      <td><div class="row-acts"><button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openModal('dtf',${i})">✏</button><button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();printDTF(${i})" title="Print DTF">🖨</button><button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();confirmDel('dtf',${i})">🗑</button></div></td>
     </tr>`).join('');
   document.getElementById('dtf-n0').textContent=DB.dtf.length;
   document.getElementById('dtf-n1').textContent=DB.dtf.filter(r=>r.typeDoc==='Approval').length;
@@ -1391,6 +1393,8 @@ function openModal(type,idx) {
   if(tel) tel.textContent=(isEdit?'Edit ':'Add New ')+labels[type];
   const db=document.getElementById(type+'-delbtn');
   if(db) db.style.display=isEdit?'':'none';
+  const pb=document.getElementById('dtf-printbtn');
+  if(pb) pb.style.display=(type==='dtf'&&isEdit)?'':'none';
   if(isEdit) fillForm(type,DB[type][idx]);
   else clearForm(type);
   document.getElementById(MIDS[type]).classList.add('open');
@@ -1518,6 +1522,34 @@ function confirmDel(t,i){
   DB[t].splice(i,1);renderAll();updateBadges();toast('🗑 បានលុប','warning');
 }
 function deleteRec(t){if(editIdx===null)return;confirmDel(t,editIdx);closeModal(MIDS[t]);}
+
+/* ════════════════════════════════
+   PRINT DTF FORM  (via GAS → DTF_Form tab → PDF)
+════════════════════════════════ */
+async function printDTF(i) {
+  const r = (i !== null && i !== undefined) ? DB.dtf[i] : null;
+  if (!r) { toast('⚠ ជ្រើស DTF Record ដើម្បី Print', 'warning'); return; }
+  if (DEMO_MODE) { toast('⚠ Print ត្រូវការ Google Sheets connection', 'warning'); return; }
+
+  toast('⏳ កំពុង Generate PDF ពី DTF_Form...', 'info');
+  try {
+    const d = await gasPost({ action: 'printDTF', data: r });
+    // Decode base64 PDF → Blob → open in new tab
+    const bytes   = Uint8Array.from(atob(d.pdf), c => c.charCodeAt(0));
+    const blob    = new Blob([bytes], { type: 'application/pdf' });
+    const url     = URL.createObjectURL(blob);
+    const win     = window.open(url, '_blank');
+    if (!win) {
+      // Fallback: direct download if popup blocked
+      const a = document.createElement('a');
+      a.href = url; a.download = d.filename || 'DTF-form.pdf'; a.click();
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    toast('✅ PDF រួចរាល់ — ' + (d.filename || 'DTF-form.pdf'), 'success');
+  } catch(e) {
+    toast('❌ ' + e.message, 'error');
+  }
+}
 
 /* ════════════════════════════════
    FILTER / SEARCH

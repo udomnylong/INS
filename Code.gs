@@ -219,10 +219,11 @@ function doPost(e) {
       return jsonResp({ ok: false, error: 'Unauthorized — Invalid token' });
     }
 
-    if (action === 'append')  return handleAppend(tab, body.data);
-    if (action === 'update')  return handleUpdate(tab, body.row, body.data);
-    if (action === 'delete')  return handleDelete(tab, body.row);
-    if (action === 'login')   return handleLogin(body.username, body.password);
+    if (action === 'append')   return handleAppend(tab, body.data);
+    if (action === 'update')   return handleUpdate(tab, body.row, body.data);
+    if (action === 'delete')   return handleDelete(tab, body.row);
+    if (action === 'login')    return handleLogin(body.username, body.password);
+    if (action === 'printDTF') return handlePrintDTF(body.data || {});
 
     return jsonResp({ ok: false, error: 'Unknown action: ' + action });
   } catch (err) {
@@ -486,6 +487,104 @@ function openUserManager() {
     'Tab[User] is now active.\n\nColumns:\n- Username (ចូល)\n- Password (លេខសម្ងាត់)\n- FullName (ឈ្មោះពេញ)\n- Role (តួនាទី)\n- Email (អ៊ីម៉ែល)\n- Status: Active / Inactive',
     SpreadsheetApp.getUi().ButtonSet.OK
   );
+}
+
+// ────────────────────────────────────────────────────────────────
+//  PRINT DTF FORM — copy DTF_Form tab, fill data, export PDF
+// ────────────────────────────────────────────────────────────────
+function handlePrintDTF(data) {
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const templateSheet = ss.getSheetByName('DTF_Form');
+    if (!templateSheet) return jsonResp({ ok: false, error: 'DTF_Form tab រកមិនឃើញ' });
+
+    // Copy template → temp sheet
+    const tempSheet = templateSheet.copyTo(ss);
+    const tempName  = '_DTF_' + Date.now();
+    tempSheet.setName(tempName);
+    ss.setActiveSheet(tempSheet);
+    ss.moveActiveSheet(ss.getNumSheets()); // move to last
+
+    // ── Parse date ──────────────────────────────────────────────
+    let yy = '', mm = '', dd = '', dateStr = '';
+    if (data.date) {
+      const dt = new Date(data.date);
+      if (!isNaN(dt)) {
+        yy = String(dt.getFullYear()).slice(-2); // 2-digit YY
+        mm = String(dt.getMonth() + 1).padStart(2, '0');
+        dd = String(dt.getDate()).padStart(2, '0');
+        dateStr = dd + '/' + mm + '/' + yy;
+      }
+    }
+
+    // ── Fill main fields ─────────────────────────────────────────
+    const set = function(cell, val) {
+      if (val !== undefined && val !== null && val !== '') {
+        try { tempSheet.getRange(cell).setValue(val); } catch(e) {}
+      }
+    };
+    set('B6', data.project);
+    set('D6', data.subProject);
+    set('J6', data.docNo);
+    set('L6', data.docTitle);
+    set('R6', dateStr);
+    set('M9', yy);
+    set('M10', mm);
+    set('M11', dd);
+
+    // ── Description + Item row 1 ─────────────────────────────────
+    set('B16', '1');
+    set('C16', data.description);
+    set('J16', data.docNo);
+
+    // ── Submit By / Remark ───────────────────────────────────────
+    set('C48', data.submitBy);
+    set('G48', data.remark);
+
+    // ── Type Document checkboxes ─────────────────────────────────
+    // cell → matching typeDoc value(s) in our system
+    const chkMap = {
+      'B44': ['Approval'],
+      'B45': ['Comment'],
+      'B46': ['Construction'],
+      'B47': ['Replace Drawing'],
+      'G44': ['Signature & Return'],
+      'G45': ['Site Instruction'],
+      'G46': ['Other: For Action and Request'],
+      'G47': ['Other: For Action and Request'],
+      'L44': ['Approved Document Submission'],
+    };
+    const td = (data.typeDoc || '').trim();
+    Object.entries(chkMap).forEach(function(entry) {
+      const cell = entry[0], types = entry[1];
+      // Only set TRUE for matching type — let template defaults handle unchecked boxes
+      if (types.indexOf(td) >= 0) {
+        try { tempSheet.getRange(cell).setValue(true); } catch(e) {}
+      }
+    });
+
+    SpreadsheetApp.flush();
+
+    // ── Export sheet as PDF via Drive URL ────────────────────────
+    const gid   = tempSheet.getSheetId();
+    const token = ScriptApp.getOAuthToken();
+    const url   = 'https://docs.google.com/spreadsheets/d/' + SPREADSHEET_ID +
+      '/export?format=pdf&gid=' + gid +
+      '&size=A4&portrait=true&fitw=true' +
+      '&gridlines=false&printtitle=false&sheetnames=false' +
+      '&pagenumbers=false&attachment=true';
+
+    const resp    = UrlFetchApp.fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+    const pdfB64  = Utilities.base64Encode(resp.getContent());
+
+    // ── Clean up temp sheet ──────────────────────────────────────
+    ss.deleteSheet(tempSheet);
+
+    return jsonResp({ ok: true, pdf: pdfB64, filename: 'DTF-' + (data.docNo || data.code || 'form') + '.pdf' });
+
+  } catch(err) {
+    return jsonResp({ ok: false, error: err.toString() });
+  }
 }
 
 // ────────────────────────────────────────────────────────────────
