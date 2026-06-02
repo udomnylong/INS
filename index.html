@@ -3,6 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="title" content="HTML for Construction INS">
+<meta name="description" content="HTML for Construction Inspection Notice (INS) management system.">
+<meta name="authot" content="Oudomny">
+<meta name="articale" content="INS"
+<meta property="og:title" content="HTML for Construction INS">
+<meta property="og:description" content="HTML for Construction Inspection Notice (INS) management system.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="./image/icon.png">
+<meta property="og:url" content="https://udomnylong.github.io/INS/">
+<link rel="icon" href="./image/icon.png" type="image/x-icon">
 <title>Construction DMS</title>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -553,7 +563,7 @@ tbody tr:hover .row-acts{opacity:1;}
 <div class="modal-backdrop" id="modal-project">
   <div class="modal">
     <div class="modal-hd">
-      <div class="modal-hd-left"><div class="modal-hd-icon">🏢</div><span class="modal-title" id="proj-mt">Add New Project</span></div>
+      <div class="modal-hd-left"><div class="modal-hd-icon">🏢</div><span class="modal-title" id="project-mt">Add New Project</span></div>
       <button class="btn btn-ghost btn-icon" onclick="closeModal('modal-project')">✕</button>
     </div>
     <div class="modal-body">
@@ -569,7 +579,7 @@ tbody tr:hover .row-acts{opacity:1;}
       </div>
     </div>
     <div class="modal-ft">
-      <button class="btn btn-danger btn-sm" id="proj-delbtn" style="margin-right:auto;display:none;" onclick="deleteRec('project')">🗑 លុប</button>
+      <button class="btn btn-danger btn-sm" id="project-delbtn" style="margin-right:auto;display:none;" onclick="deleteRec('project')">🗑 លុប</button>
       <button class="btn btn-ghost" onclick="closeModal('modal-project')">បោះបង់</button>
       <button class="btn btn-primary" onclick="saveRec('project')">💾 Save → Sheets</button>
     </div>
@@ -704,7 +714,7 @@ tbody tr:hover .row-acts{opacity:1;}
 <div class="modal-backdrop" id="modal-checklist">
   <div class="modal">
     <div class="modal-hd">
-      <div class="modal-hd-left"><div class="modal-hd-icon">✅</div><span class="modal-title" id="cl-mt">Add New Check List</span></div>
+      <div class="modal-hd-left"><div class="modal-hd-icon">✅</div><span class="modal-title" id="checklist-mt">Add New Check List</span></div>
       <button class="btn btn-ghost btn-icon" onclick="closeModal('modal-checklist')">✕</button>
     </div>
     <div class="modal-body">
@@ -713,7 +723,7 @@ tbody tr:hover .row-acts{opacity:1;}
       <div class="fg"><label class="fl">Description of Work<span class="req">*</span></label><textarea class="fta" id="cl-desc" rows="4" placeholder="Description..."></textarea></div>
     </div>
     <div class="modal-ft">
-      <button class="btn btn-danger btn-sm" id="cl-delbtn" style="margin-right:auto;display:none;" onclick="deleteRec('checklist')">🗑 លុប</button>
+      <button class="btn btn-danger btn-sm" id="checklist-delbtn" style="margin-right:auto;display:none;" onclick="deleteRec('checklist')">🗑 លុប</button>
       <button class="btn btn-ghost" onclick="closeModal('modal-checklist')">បោះបង់</button>
       <button class="btn btn-primary" onclick="saveRec('checklist')">💾 Save → Sheets</button>
     </div>
@@ -911,7 +921,7 @@ async function gasGet(params) {
 async function gasPost(body) {
   const res = await fetch(CFG.apiUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({ ...body, token: CFG.token }),
   });
   const d = await res.json();
@@ -1472,6 +1482,13 @@ async function saveRec(t) {
   const rec=getFormData(t);
   for(const [f,lbl] of (REQ[t]||[])){if(!rec[f]){toast('⚠ សូមបំពេញ '+lbl,'warning');return;}}
   const isEdit=editIdx!==null&&editIdx!==undefined;
+  // Primary key uniqueness check
+  const _pkMap={project:'projectId',dtf:'code',itp:'codeITP',ins:'codeINS'};
+  if(_pkMap[t]){
+    const _pk=rec[_pkMap[t]];
+    const _dup=_pk&&DB[t].some((r,i)=>r[_pkMap[t]]===_pk&&(!isEdit||i!==editIdx));
+    if(_dup){toast('⚠ "'+_pk+'" មានរួចហើយ — Duplicate '+_pkMap[t],'warning');return;}
+  }
   if(!DEMO_MODE){
     toast('💾 Saving to Google Sheets...','info');
     try{
