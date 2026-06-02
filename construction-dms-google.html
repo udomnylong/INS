@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Construction DMS</title>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;500;600;700&family=Noto+Sans+Khmer:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f1a;--bg2:#111827;--bg3:#1a2235;--bg4:#1f2b40;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#475569;
+  --accent:#3b82f6;--accent2:#2563eb;--accent-glow:rgba(59,130,246,0.15);
+  --green:#10b981;--green-bg:rgba(16,185,129,0.12);
+  --amber:#f59e0b;--amber-bg:rgba(245,158,11,0.12);
+  --red:#ef4444;--red-bg:rgba(239,68,68,0.12);
+  --purple:#8b5cf6;--purple-bg:rgba(139,92,246,0.12);
+  --teal:#14b8a6;--teal-bg:rgba(20,184,166,0.12);
+  --r:8px;--r2:12px;--r3:16px;
+  --font-km:'Kantumruy Pro','Noto Sans Khmer',sans-serif;
+  --font-en:'Inter',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --shadow:0 4px 32px rgba(0,0,0,0.5);
+  --shadow2:0 2px 12px rgba(0,0,0,0.3);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:14px;}
+body{font-family:var(--font-km);background:var(--bg);color:var(--text);min-height:100vh;line-height:1.7;}
+button{font-family:var(--font-km);cursor:pointer;}
+input,select,textarea{font-family:var(--font-km);}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px;}
+
+/* ── LAYOUT ── */
+.layout{display:flex;height:100vh;overflow:hidden;}
+
+/* ── SIDEBAR ── */
+.sidebar{width:230px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;transition:width 0.2s;}
+.sidebar-logo{padding:18px 16px 14px;border-bottom:1px solid var(--border);}
+.logo-wrap{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.logo-text{font-size:13px;font-weight:600;letter-spacing:-0.2px;color:var(--text);}
+.logo-sub{font-size:10px;color:var(--text3);font-family:var(--font-mono);margin-top:1px;}
+.sidebar-nav{flex:1;overflow-y:auto;padding:8px 0;}
+.nav-section{padding:12px 16px 4px;font-size:9px;font-weight:700;letter-spacing:0.1em;color:var(--text3);text-transform:uppercase;font-family:var(--font-mono);}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 12px;margin:1px 8px;border-radius:var(--r);font-size:13px;color:var(--text2);cursor:pointer;transition:all 0.15s;border:none;background:none;width:calc(100% - 16px);text-align:left;font-family:var(--font-km);}
+.nav-item:hover{background:var(--bg3);color:var(--text);}
+.nav-item.active{background:var(--accent-glow);color:var(--accent);border:1px solid rgba(59,130,246,0.2);}
+.nav-icon{width:18px;height:18px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.nav-item.active .nav-icon{background:var(--accent);color:#fff;}
+.nav-badge{margin-left:auto;font-size:10px;font-family:var(--font-mono);background:var(--bg3);padding:1px 6px;border-radius:99px;color:var(--text3);}
+.nav-item.active .nav-badge{background:rgba(59,130,246,0.2);color:var(--accent);}
+.sidebar-footer{padding:10px 8px;border-top:1px solid var(--border);}
+.user-pill{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r);cursor:pointer;transition:background 0.15s;}
+.user-pill:hover{background:var(--bg3);}
+.u-avatar{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}
+.u-name{font-size:12px;font-weight:600;color:var(--text);}
+.u-role{font-size:10px;color:var(--text3);font-family:var(--font-mono);}
+.btn-logout{display:flex;align-items:center;gap:5px;width:100%;margin-top:6px;padding:7px 10px;background:transparent;border:1px solid var(--border2);border-radius:var(--r);font-size:12px;color:var(--text2);justify-content:center;transition:all 0.15s;}
+.btn-logout:hover{background:var(--red-bg);border-color:var(--red);color:var(--red);}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{display:flex;align-items:center;gap:12px;padding:14px 24px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;}
+.topbar-info{flex:1;}
+.topbar-title{font-size:17px;font-weight:700;letter-spacing:-0.3px;color:var(--text);}
+.topbar-sub{font-size:10px;color:var(--text3);font-family:var(--font-mono);margin-top:2px;}
+.topbar-actions{display:flex;gap:8px;align-items:center;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0;}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(16,185,129,0.4);}50%{opacity:0.8;box-shadow:0 0 0 4px rgba(16,185,129,0);}}
+.content{flex:1;overflow-y:auto;padding:22px 24px;}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--r);font-size:12px;font-weight:500;border:1px solid var(--border2);background:var(--bg3);color:var(--text);transition:all 0.15s;white-space:nowrap;font-family:var(--font-km);}
+.btn:hover{background:var(--bg4);border-color:var(--border2);}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent2);border-color:var(--accent2);}
+.btn-sm{padding:5px 10px;font-size:11px;}
+.btn-danger{border-color:rgba(239,68,68,0.4);color:var(--red);}
+.btn-danger:hover{background:var(--red-bg);}
+.btn-success{border-color:rgba(16,185,129,0.4);color:var(--green);}
+.btn-success:hover{background:var(--green-bg);}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--text2);}
+.btn-ghost:hover{background:var(--bg3);color:var(--text);}
+.btn-icon{width:30px;height:30px;padding:0;justify-content:center;border-radius:var(--r);font-size:13px;}
+
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px 18px;position:relative;overflow:hidden;transition:border-color 0.2s;}
+.stat-card:hover{border-color:var(--border2);}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:2px 2px 0 0;}
+.sc-blue::after{background:linear-gradient(90deg,var(--accent),var(--purple));}
+.sc-green::after{background:var(--green);}
+.sc-amber::after{background:var(--amber);}
+.sc-red::after{background:var(--red);}
+.stat-num{font-size:28px;font-weight:700;font-family:var(--font-mono);letter-spacing:-1px;color:var(--text);}
+.stat-label{font-size:11px;color:var(--text2);margin-top:3px;}
+.stat-icon{position:absolute;right:16px;top:16px;font-size:20px;opacity:0.15;}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.search-wrap{position:relative;flex:1;min-width:180px;}
+.search-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px 8px 34px;font-size:12px;color:var(--text);font-family:var(--font-km);transition:border-color 0.15s;}
+.search-input:focus{outline:none;border-color:var(--accent);background:var(--bg3);}
+.search-input::placeholder{color:var(--text3);}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;pointer-events:none;}
+.filter-sel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;font-size:12px;color:var(--text);font-family:var(--font-km);cursor:pointer;transition:border-color 0.15s;}
+.filter-sel:focus{outline:none;border-color:var(--accent);}
+
+/* ── TABLE ── */
+.table-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;}
+.table-head-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);}
+.table-head-bar h3{font-size:13px;font-weight:600;color:var(--text);}
+.rec-count{font-size:11px;font-family:var(--font-mono);color:var(--text3);background:var(--bg3);padding:2px 8px;border-radius:99px;}
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead th{text-align:left;padding:9px 14px;font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text3);font-family:var(--font-mono);border-bottom:1px solid var(--border);background:var(--bg);white-space:nowrap;}
+tbody tr{border-bottom:1px solid var(--border);transition:background 0.1s;cursor:pointer;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:var(--bg3);}
+tbody td{padding:10px 14px;font-size:12px;vertical-align:middle;}
+.td-primary{font-weight:600;color:var(--text);}
+.td-mono{font-family:var(--font-mono);font-size:11px;color:var(--text2);}
+.td-muted{font-size:11px;color:var(--text2);}
+.td-clip{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.row-acts{display:flex;gap:4px;opacity:0;transition:opacity 0.15s;}
+tbody tr:hover .row-acts{opacity:1;}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;font-family:var(--font-mono);}
+.b-green{background:var(--green-bg);color:var(--green);}
+.b-amber{background:var(--amber-bg);color:var(--amber);}
+.b-red{background:var(--red-bg);color:var(--red);}
+.b-blue{background:var(--accent-glow);color:var(--accent);}
+.b-purple{background:var(--purple-bg);color:var(--purple);}
+.b-teal{background:var(--teal-bg);color:var(--teal);}
+
+/* ── VIEW SWITCHING ── */
+.view{display:none;}
+.view.active{display:block;}
+
+/* ── MODAL ── */
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+.modal-backdrop.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r3);width:660px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow);animation:modalIn 0.2s ease;}
+.modal-lg{width:780px;}
+@keyframes modalIn{from{transform:translateY(20px) scale(0.98);opacity:0;}to{transform:translateY(0) scale(1);opacity:1;}}
+.modal-hd{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 14px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg2);z-index:1;}
+.modal-hd-left{display:flex;align-items:center;gap:10px;}
+.modal-hd-icon{width:32px;height:32px;border-radius:8px;background:var(--accent-glow);display:flex;align-items:center;justify-content:center;font-size:14px;}
+.modal-title{font-size:14px;font-weight:700;color:var(--text);}
+.modal-body{padding:20px;}
+.modal-ft{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:var(--bg2);}
+
+/* ── FORM ── */
+.fg{margin-bottom:14px;}
+.fl{font-size:10px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.07em;font-family:var(--font-mono);}
+.fl .req{color:var(--red);margin-left:2px;}
+.fi{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;font-size:12px;color:var(--text);font-family:var(--font-km);transition:border-color 0.15s;}
+.fi:focus{outline:none;border-color:var(--accent);background:var(--bg3);}
+.fi::placeholder{color:var(--text3);}
+.fi:read-only{color:var(--text3);cursor:default;}
+.fs{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;font-size:12px;color:var(--text);font-family:var(--font-km);cursor:pointer;}
+.fs:focus{outline:none;border-color:var(--accent);}
+.fta{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;font-size:12px;color:var(--text);font-family:var(--font-km);resize:vertical;min-height:72px;}
+.fta:focus{outline:none;border-color:var(--accent);}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.fhint{font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--font-mono);}
+
+/* radio grid */
+.radio-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.radio-opt{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;font-size:12px;transition:all 0.15s;}
+.radio-opt:hover{border-color:var(--border2);}
+.radio-opt input[type=radio]{accent-color:var(--accent);width:13px;height:13px;flex-shrink:0;}
+.radio-opt.sel{border-color:var(--accent);background:var(--accent-glow);color:var(--accent);}
+.loa-row{display:flex;gap:8px;flex-wrap:wrap;}
+.loa-opt{display:flex;align-items:center;gap:7px;padding:7px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;font-size:12px;transition:all 0.15s;}
+.loa-opt input[type=radio]{accent-color:var(--accent);}
+.loa-opt.sel{border-color:var(--accent);background:var(--accent-glow);}
+
+/* vlookup panel */
+.vl-panel{background:var(--bg);border:1px solid rgba(59,130,246,0.2);border-radius:var(--r2);padding:12px 14px;margin-bottom:14px;}
+.vl-label{font-size:10px;color:var(--accent);font-family:var(--font-mono);font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.vl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.vl-item label{font-size:9px;color:var(--text3);text-transform:uppercase;font-family:var(--font-mono);letter-spacing:0.06em;display:block;margin-bottom:2px;}
+.vl-item span{font-size:12px;color:var(--text);font-weight:500;}
+
+/* ── LOGIN SCREEN ── */
+.login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:300;overflow-y:auto;padding:20px;}
+.login-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(59,130,246,0.08) 0%,transparent 60%),radial-gradient(ellipse at 70% 80%,rgba(139,92,246,0.06) 0%,transparent 60%);}
+.login-card{background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:40px 44px;width:440px;max-width:95vw;box-shadow:var(--shadow);position:relative;z-index:1;}
+.login-logo{width:58px;height:58px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 20px;box-shadow:0 8px 24px rgba(59,130,246,0.3);}
+.login-title{font-size:22px;font-weight:700;text-align:center;color:var(--text);margin-bottom:4px;letter-spacing:-0.5px;}
+.login-sub{font-size:13px;color:var(--text2);text-align:center;margin-bottom:28px;line-height:1.8;}
+.login-divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--text3);font-size:11px;font-family:var(--font-mono);}
+.login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+.pw-wrap{position:relative;}
+.pw-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;padding:4px;font-size:14px;}
+.pw-toggle:hover{color:var(--text2);}
+.login-btn{width:100%;padding:11px;background:linear-gradient(135deg,var(--accent),var(--purple));border:none;border-radius:var(--r);font-size:14px;font-weight:600;color:#fff;cursor:pointer;font-family:var(--font-km);transition:opacity 0.15s;margin-top:4px;letter-spacing:0.2px;}
+.login-btn:hover{opacity:0.92;}
+.login-btn:disabled{opacity:0.5;cursor:default;}
+.login-error{background:var(--red-bg);border:1px solid rgba(239,68,68,0.3);border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--red);margin-bottom:14px;display:none;}
+.login-error.show{display:block;}
+.demo-hint{font-size:11px;color:var(--text3);text-align:center;margin-top:16px;font-family:var(--font-mono);line-height:1.8;}
+
+/* ── TOAST ── */
+.toast-wrap{position:fixed;bottom:22px;right:22px;z-index:999;display:flex;flex-direction:column;gap:7px;}
+.toast{display:flex;align-items:center;gap:9px;padding:11px 15px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);font-size:12px;box-shadow:var(--shadow);animation:toastIn 0.22s ease;min-width:250px;}
+@keyframes toastIn{from{transform:translateX(18px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+.toast.ts{border-left:3px solid var(--green);}
+.toast.te{border-left:3px solid var(--red);}
+.toast.ti{border-left:3px solid var(--accent);}
+.toast.tw{border-left:3px solid var(--amber);}
+.spinner{width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-row{padding:28px;text-align:center;color:var(--text3);font-size:12px;display:flex;align-items:center;justify-content:center;gap:8px;}
+
+/* ── DASHBOARD ── */
+.dash-2col{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.dash-list-item{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.dash-list-item:last-child{border-bottom:none;}
+.dash-list-label{font-weight:600;color:var(--text);}
+.dash-list-sub{font-size:10px;color:var(--text3);font-family:var(--font-mono);}
+
+/* ── STATUS CHIP ── */
+.status-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:99px;font-size:10px;font-family:var(--font-mono);font-weight:500;}
+.status-chip::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0;}
+
+/* Sync states */
+#liveDot.syncing{background:var(--amber);animation:pulse 0.5s infinite;}
+#liveDot.error{background:var(--red);animation:none;}
+#syncBtn.syncing{pointer-events:none;opacity:0.6;}
+#syncBtn.syncing::before{content:'⏳ ';}
+.sync-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:99px;font-size:10px;font-family:var(--font-mono);background:var(--green-bg);color:var(--green);}
+
+@media print{
+  .sidebar,.topbar,.toolbar,.modal-backdrop,.toast-wrap,.login-screen,.row-acts,.btn{display:none!important;}
+  body{background:#fff!important;color:#000!important;font-size:11px;}
+  .main{overflow:visible!important;}.content{overflow:visible!important;padding:0!important;}
+  .view{display:none!important;}.view.active{display:block!important;}
+  .table-card{border:1px solid #ccc!important;}
+  thead th{background:#f5f5f5!important;color:#333!important;}
+  tbody td{color:#333!important;}
+  .stats-grid{display:none!important;}
+  @page{margin:15mm;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     LOGIN SCREEN
+══════════════════════════════════════════ -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-bg"></div>
+  <div class="login-card">
+    <div class="login-logo">🏗</div>
+    <h1 class="login-title">Construction DMS</h1>
+    <p class="login-sub">ប្រព័ន្ធគ្រប់គ្រងឯកសារសំណង់<br>
+      <span style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">DTF · Project · Scope · ITP · INS · CheckList</span>
+    </p>
+    <div class="login-error" id="loginError">❌ Username ឬ Password មិនត្រឹមត្រូវ</div>
+    <div class="fg">
+      <label class="fl">Username</label>
+      <input class="fi" id="loginUser" type="text" placeholder="បញ្ចូល Username" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="fg">
+      <label class="fl">Password</label>
+      <div class="pw-wrap">
+        <input class="fi" id="loginPass" type="password" placeholder="បញ្ចូល Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:38px;">
+        <button class="pw-toggle" onclick="togglePw()" id="pwToggleBtn" title="Show/Hide">👁</button>
+      </div>
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">🔐 ចូលប្រើប្រាស់</button>
+    <p class="demo-hint" id="loginHint">
+      ⚙ ទិន្នន័យ User ពី Google Sheet tab[User]
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MAIN APP
+══════════════════════════════════════════ -->
+<div class="layout" id="appLayout" style="display:none;">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-wrap">
+        <div class="logo-icon">🏗</div>
+        <div>
+          <div class="logo-text">Construction DMS</div>
+          <div class="logo-sub">Sheet DC</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">ឯកសារ</div>
+      <button class="nav-item active" onclick="showView('dtf',this)">
+        <span class="nav-icon">📄</span> DTF
+        <span class="nav-badge" id="nb-dtf">0</span>
+      </button>
+      <button class="nav-item" onclick="showView('project',this)">
+        <span class="nav-icon">🏢</span> Project
+        <span class="nav-badge" id="nb-project">0</span>
+      </button>
+      <button class="nav-item" onclick="showView('scope',this)">
+        <span class="nav-icon">📐</span> Scope
+        <span class="nav-badge" id="nb-scope">0</span>
+      </button>
+      <button class="nav-item" onclick="showView('itp',this)">
+        <span class="nav-icon">📋</span> Inspection Plan
+        <span class="nav-badge" id="nb-itp">0</span>
+      </button>
+      <button class="nav-item" onclick="showView('ins',this)">
+        <span class="nav-icon">🔍</span> INS
+        <span class="nav-badge" id="nb-ins">0</span>
+      </button>
+      <button class="nav-item" onclick="showView('checklist',this)">
+        <span class="nav-icon">✅</span> Check List
+        <span class="nav-badge" id="nb-cl">0</span>
+      </button>
+      <div class="nav-section">ទូទៅ</div>
+      <button class="nav-item" onclick="showView('dashboard',this)">
+        <span class="nav-icon">📊</span> Dashboard
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="u-avatar" id="uAvatar">A</div>
+        <div>
+          <div class="u-name" id="uName">—</div>
+          <div class="u-role" id="uRole">—</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">🚪 ចេញ</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-info">
+        <div class="topbar-title" id="viewTitle">DTF — Design Transmittal Form</div>
+        <div class="topbar-sub" id="viewSub">Tab DTF · Sheet DC</div>
+      </div>
+      <div class="live-dot" id="liveDot"></div>
+      <span style="font-size:11px;color:var(--text3);font-family:var(--font-mono);" id="sheetLbl">Demo Mode</span>
+      <div class="topbar-actions">
+        <span style="font-size:10px;color:var(--text3);font-family:var(--font-mono);" id="syncTime"></span>
+        <button class="btn btn-ghost btn-sm" id="syncBtn" onclick="syncAll()">↻ Sync</button>
+        <button class="btn btn-primary" id="topAddBtn" onclick="openAddModal()">＋ Add New DTF</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DTF -->
+      <div class="view active" id="view-dtf">
+        <div class="stats-grid">
+          <div class="stat-card sc-blue"><div class="stat-icon">📄</div><div class="stat-num" id="dtf-n0">0</div><div class="stat-label">DTF សរុប</div></div>
+          <div class="stat-card sc-green"><div class="stat-icon">✅</div><div class="stat-num" id="dtf-n1">0</div><div class="stat-label">Approval</div></div>
+          <div class="stat-card sc-amber"><div class="stat-icon">✍</div><div class="stat-num" id="dtf-n2">0</div><div class="stat-label">Signature &amp; Return</div></div>
+          <div class="stat-card sc-red"><div class="stat-icon">📂</div><div class="stat-num" id="dtf-n3">0</div><div class="stat-label">Other Types</div></div>
+        </div>
+        <div class="toolbar">
+          <div class="search-wrap"><span class="search-icon">🔍</span><input class="search-input" placeholder="ស្វែងរក Code, Project, Title..." oninput="filterTable('tb-dtf',this.value)"></div>
+          <select class="filter-sel" onchange="filterByCol('tb-dtf',7,this.value)">
+            <option value="">Type ទាំងអស់</option>
+            <option>Approval</option><option>Signature & Return</option>
+            <option>Approved Document Submission</option><option>Comment</option>
+            <option>Site Instruction</option><option>Construction</option>
+            <option>Replace Drawing</option><option>Other: For Action and Request</option>
+          </select>
+          <button class="btn btn-sm" onclick="exportExcel('dtf')">📊 Export Excel</button>
+          <button class="btn btn-sm" onclick="window.print()">🖨 Print PDF</button>
+        </div>
+        <div class="table-card">
+          <div class="table-head-bar"><h3>DTF Records</h3><span class="rec-count" id="cnt-dtf">0</span></div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Code</th><th>Date</th><th>Project</th><th>Sub-Project</th><th>Document Title</th><th>Doc N°</th><th>Description</th><th>Type Document</th><th>Submit By</th><th>Received By</th><th>Remark</th><th></th></tr></thead>
+            <tbody id="tb-dtf"><tr><td colspan="12" class="loading-row"><div class="spinner"></div> Loading...</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- PROJECT -->
+      <div class="view" id="view-project">
+        <div class="toolbar">
+          <div class="search-wrap"><span class="search-icon">🔍</span><input class="search-input" placeholder="ស្វែងរក Project..." oninput="filterTable('tb-project',this.value)"></div>
+          <select class="filter-sel" onchange="filterByCol('tb-project',5,this.value)">
+            <option value="">Status ទាំងអស់</option>
+            <option>Active</option><option>Completed</option><option>On Hold</option><option>Cancelled</option>
+          </select>
+          <button class="btn btn-sm" onclick="window.print()">🖨 Print PDF</button>
+        </div>
+        <div class="table-card">
+          <div class="table-head-bar"><h3>Project List</h3><span class="rec-count" id="cnt-project">0</span></div>
+          <table><thead><tr><th>Project ID</th><th>Project Name</th><th>Location</th><th>Start Date</th><th>Finish Date</th><th>Status</th><th></th></tr></thead>
+          <tbody id="tb-project"><tr><td colspan="7" class="loading-row"><div class="spinner"></div> Loading...</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- SCOPE -->
+      <div class="view" id="view-scope">
+        <div class="toolbar">
+          <div class="search-wrap"><span class="search-icon">🔍</span><input class="search-input" placeholder="ស្វែងរក Project, Block, House..." oninput="filterTable('tb-scope',this.value)"></div>
+          <select class="filter-sel" onchange="filterByCol('tb-scope',3,this.value)">
+            <option value="">Type LOA ទាំងអស់</option>
+            <option>Variation Order(+)</option><option>Variation Order(-)</option><option>Standard</option>
+          </select>
+          <button class="btn btn-sm" onclick="exportExcel('scope')">📊 Export Excel</button>
+          <button class="btn btn-sm" onclick="window.print()">🖨 Print</button>
+        </div>
+        <div class="table-card">
+          <div class="table-head-bar"><h3>Scope of Work</h3><span class="rec-count" id="cnt-scope">0</span></div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Project ID</th><th>Project Name</th><th>LOA</th><th>Type LOA</th><th>Block</th><th>House Type</th><th>House N°</th><th>Amount</th><th></th></tr></thead>
+            <tbody id="tb-scope"><tr><td colspan="9" class="loading-row"><div class="spinner"></div> Loading...</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- ITP -->
+      <div class="view" id="view-itp">
+        <div class="toolbar">
+          <div class="search-wrap"><span class="search-icon">🔍</span><input class="search-input" placeholder="ស្វែងរក Code ITP, Project, Subject..." oninput="filterTable('tb-itp',this.value)"></div>
+          <select class="filter-sel" id="flt-itp-proj" onchange="filterByCol('tb-itp',1,this.value)"><option value="">Project ទាំងអស់</option></select>
+          <button class="btn btn-sm" onclick="exportExcel('itp')">📊 Export Excel</button>
+          <button class="btn btn-sm" onclick="window.print()">🖨 Print</button>
+        </div>
+        <div class="table-card">
+          <div class="table-head-bar"><h3>Inspection Plan (ITP)</h3><span class="rec-count" id="cnt-itp">0</span></div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Date</th><th>Project</th><th>Code ITP</th><th>Contact Person</th><th>Main Block</th><th>Sub Block</th><th>House N°</th><th>Location</th><th>Issued Date</th><th>Subject</th><th></th></tr></thead>
+            <tbody id="tb-itp"><tr><td colspan="11" class="loading-row"><div class="spinner"></div> Loading...</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- INS -->
+      <div class="view" id="view-ins">
+        <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">
+          <div class="stat-card sc-blue"><div class="stat-icon">🔍</div><div class="stat-num" id="ins-n0">0</div><div class="stat-label">INS សរុប</div></div>
+          <div class="stat-card sc-green"><div class="stat-icon">🏢</div><div class="stat-num" id="ins-n1">0</div><div class="stat-label">Projects</div></div>
+          <div class="stat-card sc-amber"><div class="stat-icon">📅</div><div class="stat-num" id="ins-n2">0</div><div class="stat-label">ថ្ងៃនេះ</div></div>
+        </div>
+        <div class="toolbar">
+          <div class="search-wrap"><span class="search-icon">🔍</span><input class="search-input" placeholder="ស្វែងរក INS Code, Project..." oninput="filterTable('tb-ins',this.value)"></div>
+          <select class="filter-sel" id="flt-ins-proj" onchange="filterByCol('tb-ins',1,this.value)"><option value="">Project ទាំងអស់</option></select>
+          <button class="btn btn-sm" onclick="exportExcel('ins')">📊 Export Excel</button>
+          <button class="btn btn-sm" onclick="window.print()">🖨 Print PDF</button>
+        </div>
+        <div class="table-card">
+          <div class="table-head-bar"><h3>Inspection Records (INS)</h3><span class="rec-count" id="cnt-ins">0</span></div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Date Input</th><th>Project</th><th>Code INS</th><th>Contact Person</th><th>Main Block</th><th>Sub Block</th><th>House N°</th><th>Location</th><th>Issued Date</th><th>Subject</th><th>Remark</th><th></th></tr></thead>
+            <tbody id="tb-ins"><tr><td colspan="12" class="loading-row"><div class="spinner"></div> Loading...</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- CHECKLIST -->
+      <div class="view" id="view-checklist">
+        <div class="toolbar">
+          <div class="search-wrap"><span class="search-icon">🔍</span><input class="search-input" placeholder="ស្វែងរក Type, Description..." oninput="filterTable('tb-cl',this.value)"></div>
+          <select class="filter-sel" id="flt-cl-type" onchange="filterByCol('tb-cl',0,this.value)"><option value="">Type of Work ទាំងអស់</option></select>
+          <button class="btn btn-sm" onclick="exportExcel('checklist')">📊 Export Excel</button>
+          <button class="btn btn-sm" onclick="window.print()">🖨 Print</button>
+        </div>
+        <div class="table-card">
+          <div class="table-head-bar"><h3>Check List</h3><span class="rec-count" id="cnt-cl">0</span></div>
+          <table><thead><tr><th>Type of Work</th><th>Code INS</th><th>Description of Work</th><th></th></tr></thead>
+          <tbody id="tb-cl"><tr><td colspan="4" class="loading-row"><div class="spinner"></div> Loading...</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div class="view" id="view-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card sc-blue"><div class="stat-icon">📄</div><div class="stat-num" id="d-dtf">0</div><div class="stat-label">DTF Records</div></div>
+          <div class="stat-card sc-green"><div class="stat-icon">🏢</div><div class="stat-num" id="d-proj">0</div><div class="stat-label">Projects</div></div>
+          <div class="stat-card sc-amber"><div class="stat-icon">📋</div><div class="stat-num" id="d-itp">0</div><div class="stat-label">ITP Plans</div></div>
+          <div class="stat-card sc-red"><div class="stat-icon">🔍</div><div class="stat-num" id="d-ins">0</div><div class="stat-label">Inspections</div></div>
+        </div>
+        <div class="dash-2col">
+          <div class="table-card" style="padding:16px;"><h3 style="font-size:13px;font-weight:600;margin-bottom:12px;">Projects Overview</h3><div id="d-projlist"></div></div>
+          <div class="table-card" style="padding:16px;"><h3 style="font-size:13px;font-weight:600;margin-bottom:12px;">Recent INS</h3><div id="d-inslist"></div></div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </main>
+</div><!-- /layout -->
+
+<!-- ══ MODAL DTF ══ -->
+<div class="modal-backdrop" id="modal-dtf">
+  <div class="modal modal-lg">
+    <div class="modal-hd">
+      <div class="modal-hd-left"><div class="modal-hd-icon">📄</div><span class="modal-title" id="dtf-mt">Add New DTF</span></div>
+      <button class="btn btn-ghost btn-icon" onclick="closeModal('modal-dtf')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fr2">
+        <div class="fg"><label class="fl">Code<span class="req">*</span></label><input class="fi" id="dtf-code" placeholder="0001"><div class="fhint">Auto-generated</div></div>
+        <div class="fg"><label class="fl">Date<span class="req">*</span></label><input class="fi" id="dtf-date" type="date"></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Project<span class="req">*</span></label><select class="fs" id="dtf-project"><option value="">-- Select Project --</option></select></div>
+        <div class="fg"><label class="fl">Sub-Project</label><input class="fi" id="dtf-subproject" placeholder="Sub-Project name"></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Document Title</label><select class="fs" id="dtf-doctitle"><option value="">-- Select --</option></select></div>
+        <div class="fg"><label class="fl">Document N°</label><input class="fi" id="dtf-docno" placeholder="Doc-001"></div>
+      </div>
+      <div class="fg"><label class="fl">Description</label><textarea class="fta" id="dtf-desc" rows="2" placeholder="លម្អិតអំពីឯកសារ..."></textarea></div>
+      <div class="fg">
+        <label class="fl">Type Document<span class="req">*</span></label>
+        <div class="radio-grid">
+          <label class="radio-opt"><input type="radio" name="dtf-type" value="Approval"> Approval</label>
+          <label class="radio-opt"><input type="radio" name="dtf-type" value="Signature & Return"> Signature &amp; Return</label>
+          <label class="radio-opt"><input type="radio" name="dtf-type" value="Approved Document Submission"> Approved Document Submission</label>
+          <label class="radio-opt"><input type="radio" name="dtf-type" value="Comment"> Comment</label>
+          <label class="radio-opt"><input type="radio" name="dtf-type" value="Site Instruction"> Site Instruction</label>
+          <label class="radio-opt"><input type="radio" name="dtf-type" value="Construction"> Construction</label>
+          <label class="radio-opt"><input type="radio" name="dtf-type" value="Replace Drawing"> Replace Drawing</label>
+          <label class="radio-opt" style="grid-column:span 2"><input type="radio" name="dtf-type" value="Other: For Action and Request"> Other: For Action and Request</label>
+        </div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Submit By</label><input class="fi" id="dtf-submitby" placeholder="Name"></div>
+        <div class="fg"><label class="fl">Received By</label><input class="fi" id="dtf-receivedby" placeholder="Name"></div>
+      </div>
+      <div class="fg"><label class="fl">Remark</label><input class="fi" id="dtf-remark" placeholder="Remark..."></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-danger btn-sm" id="dtf-delbtn" style="margin-right:auto;display:none;" onclick="deleteRec('dtf')">🗑 លុប</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-dtf')">បោះបង់</button>
+      <button class="btn btn-primary" onclick="saveRec('dtf')">💾 Save → Sheets</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL PROJECT ══ -->
+<div class="modal-backdrop" id="modal-project">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-hd-left"><div class="modal-hd-icon">🏢</div><span class="modal-title" id="proj-mt">Add New Project</span></div>
+      <button class="btn btn-ghost btn-icon" onclick="closeModal('modal-project')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fr2">
+        <div class="fg"><label class="fl">Project ID<span class="req">*</span></label><input class="fi" id="proj-id" placeholder="PRJ-001"></div>
+        <div class="fg"><label class="fl">Status</label><select class="fs" id="proj-status"><option>Active</option><option>Completed</option><option>On Hold</option><option>Cancelled</option></select></div>
+      </div>
+      <div class="fg"><label class="fl">Project Name<span class="req">*</span></label><input class="fi" id="proj-name" placeholder="Project Name"></div>
+      <div class="fg"><label class="fl">Location</label><input class="fi" id="proj-loc" placeholder="Location"></div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Start Date</label><input class="fi" id="proj-start" type="date"></div>
+        <div class="fg"><label class="fl">Finish Date</label><input class="fi" id="proj-end" type="date"></div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-danger btn-sm" id="proj-delbtn" style="margin-right:auto;display:none;" onclick="deleteRec('project')">🗑 លុប</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-project')">បោះបង់</button>
+      <button class="btn btn-primary" onclick="saveRec('project')">💾 Save → Sheets</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL SCOPE ══ -->
+<div class="modal-backdrop" id="modal-scope">
+  <div class="modal modal-lg">
+    <div class="modal-hd">
+      <div class="modal-hd-left"><div class="modal-hd-icon">📐</div><span class="modal-title" id="scope-mt">Add New Scope</span></div>
+      <button class="btn btn-ghost btn-icon" onclick="closeModal('modal-scope')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fr2">
+        <div class="fg"><label class="fl">Project<span class="req">*</span></label><select class="fs" id="scope-proj" onchange="onScopeProjChange()"><option value="">-- Select Project --</option></select></div>
+        <div class="fg"><label class="fl">Project ID</label><input class="fi" id="scope-projid" placeholder="Auto" readonly></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">LOA</label><input class="fi" id="scope-loa" placeholder="LOA-001"></div>
+        <div class="fg"><label class="fl">Block</label><input class="fi" id="scope-block" placeholder="Block A"></div>
+      </div>
+      <div class="fg">
+        <label class="fl">Type LOA<span class="req">*</span></label>
+        <div class="loa-row">
+          <label class="loa-opt"><input type="radio" name="sc-loa" value="Variation Order(+)"> Variation Order(+)</label>
+          <label class="loa-opt"><input type="radio" name="sc-loa" value="Variation Order(-)"> Variation Order(-)</label>
+          <label class="loa-opt sel"><input type="radio" name="sc-loa" value="Standard" checked> Standard</label>
+        </div>
+      </div>
+      <div class="fr3">
+        <div class="fg"><label class="fl">House Type</label><input class="fi" id="scope-htype" placeholder="VT1"></div>
+        <div class="fg"><label class="fl">House N°</label><input class="fi" id="scope-hno" placeholder="H001"></div>
+        <div class="fg"><label class="fl">Amount</label><input class="fi" id="scope-amount" type="number" placeholder="0"></div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-danger btn-sm" id="scope-delbtn" style="margin-right:auto;display:none;" onclick="deleteRec('scope')">🗑 លុប</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-scope')">បោះបង់</button>
+      <button class="btn btn-primary" onclick="saveRec('scope')">💾 Save → Sheets</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL ITP ══ -->
+<div class="modal-backdrop" id="modal-itp">
+  <div class="modal modal-lg">
+    <div class="modal-hd">
+      <div class="modal-hd-left"><div class="modal-hd-icon">📋</div><span class="modal-title" id="itp-mt">Add New ITP</span></div>
+      <button class="btn btn-ghost btn-icon" onclick="closeModal('modal-itp')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fr2">
+        <div class="fg"><label class="fl">Date<span class="req">*</span></label><input class="fi" id="itp-date" type="date"></div>
+        <div class="fg"><label class="fl">Code ITP</label><input class="fi" id="itp-code" readonly><div class="fhint">Auto-generated</div></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Project Name<span class="req">*</span></label><select class="fs" id="itp-proj" onchange="onItpProjChange()"><option value="">-- Select --</option></select></div>
+        <div class="fg"><label class="fl">Contact Person</label><input class="fi" id="itp-contact" placeholder="Name"></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Main Block</label><input class="fi" id="itp-mainblock" placeholder="Block A"></div>
+        <div class="fg"><label class="fl">Sub Block</label><select class="fs" id="itp-subblock" onchange="onItpSubChange()"><option value="">-- Select --</option></select></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">House N°</label><select class="fs" id="itp-houseno"><option value="">-- Select --</option></select></div>
+        <div class="fg"><label class="fl">Location</label><input class="fi" id="itp-loc" placeholder="Level 1..."></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Issued Date</label><input class="fi" id="itp-issued" type="date"></div>
+        <div class="fg"><label class="fl">Subject</label><select class="fs" id="itp-subject"><option value="">-- Select --</option></select></div>
+      </div>
+      <div class="fg"><label class="fl">Description</label><textarea class="fta" id="itp-desc" rows="2" placeholder="Description..."></textarea></div>
+      <div class="fr3">
+        <div class="fg"><label class="fl">Prepared By</label><input class="fi" id="itp-prep" placeholder="Name"></div>
+        <div class="fg"><label class="fl">Check By</label><input class="fi" id="itp-check" placeholder="Name"></div>
+        <div class="fg"><label class="fl">Approved By</label><input class="fi" id="itp-appr" placeholder="Name"></div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-danger btn-sm" id="itp-delbtn" style="margin-right:auto;display:none;" onclick="deleteRec('itp')">🗑 លុប</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-itp')">បោះបង់</button>
+      <button class="btn btn-primary" onclick="saveRec('itp')">💾 Save → Sheets</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL INS ══ -->
+<div class="modal-backdrop" id="modal-ins">
+  <div class="modal modal-lg">
+    <div class="modal-hd">
+      <div class="modal-hd-left"><div class="modal-hd-icon">🔍</div><span class="modal-title" id="ins-mt">Add New INS</span></div>
+      <button class="btn btn-ghost btn-icon" onclick="closeModal('modal-ins')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fr2">
+        <div class="fg"><label class="fl">Date Input<span class="req">*</span></label><input class="fi" id="ins-date" type="date"></div>
+        <div class="fg"><label class="fl">Code INS</label><input class="fi" id="ins-code" readonly><div class="fhint">Auto-generated</div></div>
+      </div>
+      <div class="fg">
+        <label class="fl">ITP N° (Link from ITP)</label>
+        <select class="fs" id="ins-itpno" onchange="onInsItpChange(this.value)"><option value="">-- Select ITP N° --</option></select>
+      </div>
+      <div class="vl-panel">
+        <div class="vl-label">🔗 Auto-fill from ITP (VLookup)</div>
+        <div class="vl-grid">
+          <div class="vl-item"><label>Project</label><span id="vl-project">—</span></div>
+          <div class="vl-item"><label>Contact Person</label><span id="vl-contact">—</span></div>
+          <div class="vl-item"><label>Main Block</label><span id="vl-mainblock">—</span></div>
+          <div class="vl-item"><label>Sub Block</label><span id="vl-subblock">—</span></div>
+          <div class="vl-item"><label>House N°</label><span id="vl-houseno">—</span></div>
+          <div class="vl-item"><label>Location</label><span id="vl-location">—</span></div>
+          <div class="vl-item"><label>Issued Date</label><span id="vl-issued">—</span></div>
+          <div class="vl-item"><label>Subject</label><span id="vl-subject">—</span></div>
+        </div>
+        <input type="hidden" id="ins-project"><input type="hidden" id="ins-contact">
+        <input type="hidden" id="ins-mainblock"><input type="hidden" id="ins-subblock">
+        <input type="hidden" id="ins-houseno"><input type="hidden" id="ins-location">
+        <input type="hidden" id="ins-issued"><input type="hidden" id="ins-subject">
+      </div>
+      <div class="fg"><label class="fl">Remark</label><input class="fi" id="ins-remark" placeholder="Remark..."></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-danger btn-sm" id="ins-delbtn" style="margin-right:auto;display:none;" onclick="deleteRec('ins')">🗑 លុប</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-ins')">បោះបង់</button>
+      <button class="btn btn-primary" onclick="saveRec('ins')">💾 Save → Sheets</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL CHECKLIST ══ -->
+<div class="modal-backdrop" id="modal-checklist">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-hd-left"><div class="modal-hd-icon">✅</div><span class="modal-title" id="cl-mt">Add New Check List</span></div>
+      <button class="btn btn-ghost btn-icon" onclick="closeModal('modal-checklist')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg"><label class="fl">Type of Work<span class="req">*</span></label><input class="fi" id="cl-type" placeholder="Foundation, Rebar, Concrete..."></div>
+      <div class="fg"><label class="fl">Code INS</label><input class="fi" id="cl-code" placeholder="INS-0001"></div>
+      <div class="fg"><label class="fl">Description of Work<span class="req">*</span></label><textarea class="fta" id="cl-desc" rows="4" placeholder="Description..."></textarea></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-danger btn-sm" id="cl-delbtn" style="margin-right:auto;display:none;" onclick="deleteRec('checklist')">🗑 លុប</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-checklist')">បោះបង់</button>
+      <button class="btn btn-primary" onclick="saveRec('checklist')">💾 Save → Sheets</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+/* ════════════════════════════════
+   CONFIG
+════════════════════════════════ */
+const CFG = {
+  // ── Option A: Google Apps Script Web App (ឆាប់ & ងាយ) ──
+  // Deploy Code.gs as Web App → Copy URL here
+  apiUrl: 'https://script.google.com/macros/s/AKfycby-9r8LK2YvTrpB9TCmhy9hWC8BnNZ9yDnU_AoiOPK81P6o8UVeb1FBfsV4YVtNeM_oNA/exec',
+  token:  'DMS_SECRET_2026',  // same as SECRET_TOKEN in Code.gs
+
+  // ── Option B: Direct Sheets API (ត្រូវការ API Key) ──
+  apiKey:  '',  // Google Cloud Console → Credentials → API Key
+  sheetId: '1zOXTjsaJ4t909Qbw24KGO9JetaOePea_1m1e0TVEhUk',
+
+  tabs: {
+    users:     'User',
+    dtf:       'DTF',
+    project:   'Project',
+    scope:     'Scope',
+    itp:       'IPT',
+    ins:       'INS',
+    checklist: 'CheckList',
+    doctype:   'DocumentType',
+  },
+};
+
+const DEMO_MODE = !CFG.apiUrl && !CFG.apiKey;
+
+/* ════════════════════════════════
+   STATE
+════════════════════════════════ */
+let currentUser = null;
+let currentView = 'dtf';
+let editIdx = null;
+let accessToken = null;
+
+let DB = { dtf:[], project:[], scope:[], itp:[], ins:[], checklist:[], docTypes:[] };
+
+/* ════════════════════════════════
+   LOGIN
+════════════════════════════════ */
+function togglePw() {
+  const f = document.getElementById('loginPass');
+  const b = document.getElementById('pwToggleBtn');
+  if (f.type === 'password') { f.type = 'text'; b.textContent = '🙈'; }
+  else { f.type = 'password'; b.textContent = '👁'; }
+}
+
+async function doLogin() {
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+  errEl.classList.remove('show');
+  if (!username || !password) { errEl.textContent = '⚠ សូមបំពេញ Username និង Password'; errEl.classList.add('show'); return; }
+  btn.disabled = true; btn.textContent = '⏳ កំពុងពិនិត្យ...';
+  try {
+    const user = await validateUser(username, password);
+    if (user) { startApp(user); }
+    else { errEl.textContent = '❌ Username ឬ Password មិនត្រឹមត្រូវ'; errEl.classList.add('show'); }
+  } catch(e) { errEl.textContent = '❌ Error: ' + e.message; errEl.classList.add('show'); }
+  btn.disabled = false; btn.textContent = '🔐 ចូលប្រើប្រាស់';
+}
+
+const DEMO_USERS = [
+  { username:'admin',  password:'admin123',  fullName:'Admin User',  role:'Administrator', email:'admin@dms.com',  status:'Active' },
+  { username:'sokha',  password:'sokha123',  fullName:'Sokha Chan',  role:'Inspector',     email:'sokha@dms.com',  status:'Active' },
+  { username:'dara',   password:'dara123',   fullName:'Dara Meng',   role:'Engineer',      email:'dara@dms.com',   status:'Active' },
+  { username:'ratha',  password:'ratha123',  fullName:'Ratha Ly',    role:'Site Manager',  email:'ratha@dms.com',  status:'Active' },
+];
+
+async function validateUser(username, password) {
+  // Demo mode — use hardcoded users
+  if (DEMO_MODE) {
+    return DEMO_USERS.find(u => u.username===username && u.password===password && u.status==='Active') || null;
+  }
+
+  // Option A: GAS Web App
+  if (CFG.apiUrl) {
+    const url = `${CFG.apiUrl}?action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (!data.ok) return null;
+    return data.user;
+  }
+
+  // Option B: Direct Sheets API (read-only with API Key)
+  if (CFG.apiKey) {
+    const url  = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.sheetId}/values/${encodeURIComponent(CFG.tabs.users+'!A2:F1000')}?key=${CFG.apiKey}`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const rows = data.values || [];
+    const row  = rows.find(r => r[0]===username && r[1]===password && (r[5]||'Active')==='Active');
+    if (!row) return null;
+    return { username:row[0], fullName:row[2]||row[0], role:row[3]||'User', email:row[4]||'', status:row[5]||'Active' };
+  }
+
+  return null;
+}
+
+function startApp(user) {
+  currentUser = user;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appLayout').style.display = 'flex';
+  document.getElementById('uName').textContent  = user.fullName;
+  document.getElementById('uRole').textContent  = user.role;
+  document.getElementById('uAvatar').textContent = user.fullName.charAt(0).toUpperCase();
+  document.getElementById('sheetLbl').textContent = DEMO_MODE ? 'Demo Mode' : 'Google Sheets';
+  if (DEMO_MODE) {
+    loadSampleData();
+    populateDropdowns();
+    renderAll();
+  } else {
+    loadSampleData(); // show something while syncing
+    renderAll();
+    startAutoSync();  // real sync starts here
+  }
+}
+
+function doLogout() {
+  stopAutoSync();
+  currentUser = null;
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('appLayout').style.display = 'none';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').classList.remove('show');
+}
+
+
+/* ════════════════════════════════
+   DATE UTILITIES
+════════════════════════════════ */
+
+// Normalize any date string → "yyyy-MM-dd" (for input[type=date])
+// Uses LOCAL date parts to avoid UTC-shift losing 1 day
+function normDate(val) {
+  if (!val) return '';
+  // Already ISO yyyy-MM-dd — return as-is
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(val).trim())) return String(val).trim();
+  // Parse using local time (avoids UTC -1 day bug)
+  const d = new Date(val);
+  if (!isNaN(d.getTime())) {
+    const y   = d.getFullYear();
+    const mo  = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${mo}-${day}`;
+  }
+  return String(val);
+}
+
+// Format "yyyy-MM-dd" → "dd/MM/yyyy" for display
+function fmtDate(val) {
+  if (!val || val === '—') return '—';
+  const iso = normDate(val);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    const [y, m, day] = iso.split('-');
+    return `${day}/${m}/${y}`;
+  }
+  return val;
+}
+
+// Date fields per module (apply normDate on sync)
+const DATE_COLS = {
+  dtf:       ['date'],
+  project:   ['startDate','finishDate'],
+  scope:     [],
+  itp:       ['date','issuedDate'],
+  ins:       ['dateInput','issuedDate'],
+  checklist: [],
+};
+
+/* ════════════════════════════════
+   GOOGLE SHEETS API
+   Supports: GAS Web App OR Direct API
+════════════════════════════════ */
+
+// ── GAS Web App calls ──
+async function gasGet(params) {
+  const qs  = new URLSearchParams({ ...params, token: CFG.token }).toString();
+  const res = await fetch(`${CFG.apiUrl}?${qs}`);
+  const d   = await res.json();
+  if (!d.ok) throw new Error(d.error || 'GAS error');
+  return d;
+}
+async function gasPost(body) {
+  const res = await fetch(CFG.apiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...body, token: CFG.token }),
+  });
+  const d = await res.json();
+  if (!d.ok) throw new Error(d.error || 'GAS error');
+  return d;
+}
+
+// ── Read rows from sheet ──
+async function sheetsRead(tab) {
+  if (CFG.apiUrl) {
+    const d = await gasGet({ action: 'read', tab });
+    // convert object array → values array (same format as Sheets API)
+    const headers = Object.keys(d.data[0] || {}).filter(k => k !== '_row');
+    return d.data.map(row => headers.map(h => row[h] || ''));
+  }
+  if (CFG.apiKey) {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.sheetId}/values/${encodeURIComponent(tab+'!A2:Z2000')}?key=${CFG.apiKey}`;
+    const res = await fetch(url);
+    const d   = await res.json();
+    if (d.error) throw new Error(d.error.message);
+    return d.values || [];
+  }
+  return [];
+}
+
+// ── Append row ──
+async function sheetsAppend(tab, rowArr) {
+  if (CFG.apiUrl) {
+    const headers = COLS[Object.keys(COLS).find(k => CFG.tabs[k] === tab)] || [];
+    const data = {};
+    headers.forEach((h, i) => data[h.charAt(0).toUpperCase() + h.slice(1).replace(/([A-Z])/g, '$1')] = rowArr[i] || '');
+    // Use column names from TAB_CONFIG headers order
+    const rowData = {};
+    rowArr.forEach((v, i) => rowData['col' + i] = v);
+    return gasPost({ action: 'append', tab, data: buildRowObj(tab, rowArr) });
+  }
+  throw new Error('No API configured for write');
+}
+
+// ── Update row ──
+async function sheetsUpdate(tab, rowIdx, rowArr) {
+  if (CFG.apiUrl) {
+    return gasPost({ action: 'update', tab, row: rowIdx, data: buildRowObj(tab, rowArr) });
+  }
+  throw new Error('No API configured for write');
+}
+
+// ── Delete row ──
+async function sheetsDeleteRow(tab, rowIdx) {
+  if (CFG.apiUrl) {
+    return gasPost({ action: 'delete', tab, row: rowIdx });
+  }
+  throw new Error('No API configured for delete');
+}
+
+// ── Build row object {HeaderName: value} ──
+function buildRowObj(tab, rowArr) {
+  const typeKey = Object.keys(CFG.tabs).find(k => CFG.tabs[k] === tab);
+  const cols    = COLS[typeKey] || [];
+  const obj = {};
+  // Map using GAS header names (PascalCase)
+  const gasHeaderMap = {
+    dtf:       ['Code','Date','Project','SubProject','DocumentTitle','Description','DocumentNo','TypeDocument','SubmitBy','ReceivedBy','Remark'],
+    project:   ['ProjectID','ProjectName','Location','StartDate','FinishDate','Status'],
+    scope:     ['ProjectID','ProjectName','LOA','TypeLOA','Block','HouseType','HouseNo','Amount'],
+    itp:       ['Date','ProjectName','CodeITP','ContactPerson','MainBlock','SubBlock','HouseNo','Location','IssuedDate','Subject','Description','PreparedBy','CheckBy','ApprovedBy'],
+    ins:       ['DateInput','Project','CodeINS','ContactPerson','MainBlock','SubBlock','HouseNo','Location','IssuedDate','Subject','Remark','ITPNo'],
+    checklist: ['TypeOfWork','CodeINS','DescriptionOfWork'],
+  };
+  const gasHeaders = gasHeaderMap[typeKey] || cols;
+  gasHeaders.forEach((h, i) => obj[h] = rowArr[i] || '');
+  return obj;
+}
+
+/* ════════════════════════════════
+   REAL SYNC SYSTEM
+════════════════════════════════ */
+let _syncTimer  = null;
+let _syncActive = false;
+const SYNC_INTERVAL = 30000; // 30 seconds
+
+async function syncAll(silent = false) {
+  if (DEMO_MODE) {
+    if (!silent) toast('⚡ Demo Mode — no real sync','info');
+    return;
+  }
+  if (_syncActive) return; // prevent concurrent sync
+  _syncActive = true;
+  setSyncState('syncing');
+  if (!silent) toast('🔄 Syncing...','info');
+  try {
+    await Promise.all(['dtf','project','scope','itp','ins','checklist'].map(t => syncTab(t)));
+    populateDropdowns();
+    renderAll();
+    setSyncState('ok');
+    if (!silent) toast('✅ Sync ជោគជ័យ — ' + new Date().toLocaleTimeString('km-KH'),'success');
+  } catch(e) {
+    setSyncState('error');
+    if (!silent) toast('❌ Sync Error: '+e.message,'error');
+    console.error('Sync error:', e);
+  } finally {
+    _syncActive = false;
+  }
+}
+
+// Sync only one tab (after save/delete)
+async function syncTabOnly(t) {
+  if (DEMO_MODE) return;
+  try {
+    await syncTab(t);
+    populateDropdowns();
+    renderAll();
+    setSyncState('ok');
+  } catch(e) { console.error('syncTabOnly error:', e); }
+}
+
+function setSyncState(state) {
+  const dot = document.getElementById('liveDot');
+  const btn = document.getElementById('syncBtn');
+  const lbl = document.getElementById('syncTime');
+  if (!dot) return;
+  dot.className = 'live-dot' + (state === 'syncing' ? ' syncing' : state === 'error' ? ' error' : '');
+  if (btn) btn.className = 'btn btn-ghost btn-sm' + (state === 'syncing' ? ' syncing' : '');
+  if (lbl && state === 'ok') {
+    const now = new Date();
+    lbl.textContent = 'Synced ' + now.toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }
+  if (lbl && state === 'error') lbl.textContent = 'Sync failed';
+}
+
+function startAutoSync() {
+  stopAutoSync();
+  if (DEMO_MODE) return;
+  // Initial sync
+  syncAll(true);
+  // Auto-sync every 30s when page is visible
+  _syncTimer = setInterval(() => {
+    if (!document.hidden) syncAll(true);
+  }, SYNC_INTERVAL);
+  // Sync when tab becomes visible again
+  document.addEventListener('visibilitychange', onVisibilityChange);
+}
+
+function stopAutoSync() {
+  if (_syncTimer) { clearInterval(_syncTimer); _syncTimer = null; }
+  document.removeEventListener('visibilitychange', onVisibilityChange);
+}
+
+function onVisibilityChange() {
+  if (!document.hidden) syncAll(true);
+}
+
+const COLS = {
+  dtf:       ['code','date','project','subProject','docTitle','description','docNo','typeDoc','submitBy','receivedBy','remark'],
+  project:   ['projectId','projectName','location','startDate','finishDate','status'],
+  scope:     ['projectId','projectName','loa','typeLoa','block','houseType','houseNo','amount'],
+  itp:       ['date','projectName','codeITP','contactPerson','mainBlock','subBlock','houseNo','location','issuedDate','subject','description','preparedBy','checkBy','approvedBy'],
+  ins:       ['dateInput','project','codeINS','contactPerson','mainBlock','subBlock','houseNo','location','issuedDate','subject','remark','itpNo'],
+  checklist: ['typeOfWork','codeINS','descriptionOfWork'],
+};
+
+async function syncTab(t) {
+  const cols  = COLS[t];
+  const dCols = DATE_COLS[t] || [];
+  const rows  = await sheetsRead(CFG.tabs[t]);
+  DB[t] = rows.filter(r => r[0]).map((r, i) => {
+    const o = { _row: i + 2 };
+    cols.forEach((c, ci) => {
+      let v = r[ci] !== undefined ? String(r[ci]) : '';
+      if (dCols.includes(c)) v = normDate(v);
+      o[c] = v;
+    });
+    // Pad numeric code for DTF
+    if (t === 'dtf' && o.code && /^\d+$/.test(o.code.trim())) {
+      o.code = o.code.trim().padStart(4, '0');
+    }
+    return o;
+  });
+}
+
+/* ════════════════════════════════
+   SAMPLE DATA
+════════════════════════════════ */
+function loadSampleData() {
+  DB.project = [
+    {_row:2,projectId:'PRJ-001',projectName:'Angkor National Residence PH1',location:'Siem Reap',startDate:'2025-01-01',finishDate:'2027-12-31',status:'Active'},
+    {_row:3,projectId:'PRJ-002',projectName:'Phnom Penh Villa Project',location:'Phnom Penh',startDate:'2025-06-01',finishDate:'2026-12-31',status:'Active'},
+  ];
+  DB.scope = [
+    {_row:2,projectId:'PRJ-001',projectName:'Angkor National Residence PH1',loa:'LOA-001',typeLoa:'Standard',block:'Block A',houseType:'VT1',houseNo:'H001',amount:'85000'},
+    {_row:3,projectId:'PRJ-001',projectName:'Angkor National Residence PH1',loa:'LOA-002',typeLoa:'Variation Order(+)',block:'Block A',houseType:'VT2',houseNo:'H002',amount:'92000'},
+    {_row:4,projectId:'PRJ-001',projectName:'Angkor National Residence PH1',loa:'LOA-003',typeLoa:'Standard',block:'Block B',houseType:'VT1',houseNo:'H003',amount:'85000'},
+    {_row:5,projectId:'PRJ-002',projectName:'Phnom Penh Villa Project',loa:'LOA-004',typeLoa:'Standard',block:'Block C',houseType:'VT3',houseNo:'H001',amount:'120000'},
+  ];
+  DB.checklist = [
+    {_row:2,typeOfWork:'Foundation',codeINS:'INS-0001',descriptionOfWork:'Check rebar alignment and spacing'},
+    {_row:3,typeOfWork:'Foundation',codeINS:'INS-0001',descriptionOfWork:'Verify concrete cover ≥ 50mm'},
+    {_row:4,typeOfWork:'Rebar',codeINS:'INS-0002',descriptionOfWork:'Bar size correct per drawing'},
+    {_row:5,typeOfWork:'Rebar',codeINS:'INS-0002',descriptionOfWork:'Lap length adequate (40d min)'},
+    {_row:6,typeOfWork:'Concrete',codeINS:'INS-0003',descriptionOfWork:'Slump test 100-150mm'},
+    {_row:7,typeOfWork:'Concrete',codeINS:'INS-0003',descriptionOfWork:'Cube samples taken (3 sets)'},
+    {_row:8,typeOfWork:'Formwork',codeINS:'INS-0004',descriptionOfWork:'Formwork alignment plumb ±5mm'},
+  ];
+  DB.docTypes = ['Architectural Drawing','Structural Drawing','M&E Drawing','Shop Drawing','As-Built Drawing','Technical Specification','Method Statement'];
+  DB.itp = [
+    {_row:2,date:'2026-05-10',projectName:'Angkor National Residence PH1',codeITP:'HE-ANJ-PH1-IPT-LHB-0001',contactPerson:'Dara Chan',mainBlock:'Block A',subBlock:'A1',houseNo:'H001',location:'Level 1',issuedDate:'2026-05-12',subject:'Foundation',description:'Foundation inspection',preparedBy:'Sokha',checkBy:'Ratha',approvedBy:'Vanna'},
+    {_row:3,date:'2026-05-18',projectName:'Angkor National Residence PH1',codeITP:'HE-ANJ-PH1-IPT-LHB-0002',contactPerson:'Dara Chan',mainBlock:'Block A',subBlock:'A1',houseNo:'H002',location:'Level 1',issuedDate:'2026-05-20',subject:'Rebar',description:'Rebar inspection',preparedBy:'Sokha',checkBy:'Ratha',approvedBy:'Vanna'},
+    {_row:4,date:'2026-05-25',projectName:'Angkor National Residence PH1',codeITP:'HE-ANJ-PH1-IPT-LHB-0003',contactPerson:'Dara Chan',mainBlock:'Block B',subBlock:'B1',houseNo:'H003',location:'Level 2',issuedDate:'2026-05-27',subject:'Concrete',description:'Concrete pour',preparedBy:'Sokha',checkBy:'Ratha',approvedBy:'Vanna'},
+  ];
+  DB.ins = [
+    {_row:2,dateInput:'2026-05-13',project:'Angkor National Residence PH1',codeINS:'INS-0001',contactPerson:'Dara Chan',mainBlock:'Block A',subBlock:'A1',houseNo:'H001',location:'Level 1',issuedDate:'2026-05-12',subject:'Foundation',remark:'Pass',itpNo:'HE-ANJ-PH1-IPT-LHB-0001'},
+    {_row:3,dateInput:'2026-05-21',project:'Angkor National Residence PH1',codeINS:'INS-0002',contactPerson:'Dara Chan',mainBlock:'Block A',subBlock:'A1',houseNo:'H002',location:'Level 1',issuedDate:'2026-05-20',subject:'Rebar',remark:'Pending correction',itpNo:'HE-ANJ-PH1-IPT-LHB-0002'},
+  ];
+  DB.dtf = [
+    {_row:2,code:'0001',date:'2026-05-10',project:'Angkor National Residence PH1',subProject:'Phase 1A',docTitle:'Structural Drawing',description:'Foundation layout Block A',docNo:'SD-001',typeDoc:'Approval',submitBy:'Sokha Chan',receivedBy:'Dara Meng',remark:''},
+    {_row:3,code:'0002',date:'2026-05-14',project:'Angkor National Residence PH1',subProject:'Phase 1A',docTitle:'Architectural Drawing',description:'Floor plan VT1',docNo:'AD-002',typeDoc:'Signature & Return',submitBy:'Sokha Chan',receivedBy:'Dara Meng',remark:'Urgent'},
+    {_row:4,code:'0003',date:'2026-05-18',project:'Phnom Penh Villa Project',subProject:'',docTitle:'Shop Drawing',description:'M&E installation',docNo:'MEP-003',typeDoc:'Comment',submitBy:'Ratha Ly',receivedBy:'Vanna Keo',remark:''},
+    {_row:5,code:'0004',date:'2026-05-22',project:'Angkor National Residence PH1',subProject:'Phase 1B',docTitle:'As-Built Drawing',description:'Block B foundation',docNo:'AB-004',typeDoc:'Approved Document Submission',submitBy:'Sokha Chan',receivedBy:'Dara Meng',remark:'Final'},
+  ];
+}
+
+/* ════════════════════════════════
+   DROPDOWNS
+════════════════════════════════ */
+function populateDropdowns() {
+  const pNames = DB.project.map(p=>p.projectName);
+  fillSel('dtf-project', pNames);
+  fillSel('scope-proj', pNames);
+  fillSel('itp-proj', pNames);
+  fillSel('flt-itp-proj', pNames, true);
+  fillSel('flt-ins-proj', pNames, true);
+  fillSel('ins-itpno', DB.itp.map(r=>r.codeITP));
+  const subjects = [...new Set(DB.checklist.map(c=>c.typeOfWork))];
+  fillSel('itp-subject', subjects);
+  fillSel('dtf-doctitle', DB.docTypes);
+  // cl type filter
+  const clSel = document.getElementById('flt-cl-type');
+  if (clSel) { fillSelEl(clSel, subjects, true); }
+}
+
+function fillSel(id, opts, keepFirst=false) {
+  const el = document.getElementById(id); if (!el) return;
+  fillSelEl(el, opts, keepFirst);
+}
+function fillSelEl(el, opts, keepFirst=false) {
+  const first = el.options[0];
+  el.innerHTML = '';
+  if (keepFirst && first) el.appendChild(first);
+  opts.forEach(v => { const o=document.createElement('option'); o.value=v; o.textContent=v; el.appendChild(o); });
+}
+
+function onScopeProjChange() {
+  const name = document.getElementById('scope-proj').value;
+  const p = DB.project.find(x=>x.projectName===name);
+  document.getElementById('scope-projid').value = p ? p.projectId : '';
+}
+function onItpProjChange() {
+  const name = document.getElementById('itp-proj').value;
+  const blocks = [...new Set(DB.scope.filter(s=>s.projectName===name).map(s=>s.block))];
+  fillSel('itp-subblock', blocks);
+  fillSel('itp-houseno', []);
+}
+function onItpSubChange() {
+  const proj = document.getElementById('itp-proj').value;
+  const sub  = document.getElementById('itp-subblock').value;
+  const houses = [...new Set(DB.scope.filter(s=>s.projectName===proj && s.block===sub).map(s=>s.houseNo))];
+  fillSel('itp-houseno', houses);
+}
+function onInsItpChange(val) {
+  const itp = DB.itp.find(r=>r.codeITP===val);
+  const map = [['project','projectName'],['contact','contactPerson'],['mainblock','mainBlock'],['subblock','subBlock'],['houseno','houseNo'],['location','location'],['issued','issuedDate'],['subject','subject']];
+  map.forEach(([id,key])=>{
+    const v = itp ? (itp[key]||'') : '';
+    const h=document.getElementById('ins-'+id); if(h) h.value=v;
+    const d=document.getElementById('vl-'+id); if(d) d.textContent=v||'—';
+  });
+}
+
+/* ════════════════════════════════
+   AUTO CODE
+════════════════════════════════ */
+function nextCode(type) {
+  if (type==='dtf') {
+    const m = DB.dtf.reduce((a,r)=>Math.max(a,parseInt(r.code)||0),0);
+    return String(m+1).padStart(4,'0');
+  }
+  if (type==='itp') {
+    const m = DB.itp.reduce((a,r)=>Math.max(a,parseInt((r.codeITP||'').split('-').pop())||0),0);
+    return 'HE-ANJ-PH1-IPT-LHB-'+String(m+1).padStart(4,'0');
+  }
+  if (type==='ins') {
+    const m = DB.ins.reduce((a,r)=>Math.max(a,parseInt((r.codeINS||'').split('-')[1])||0),0);
+    return 'INS-'+String(m+1).padStart(4,'0');
+  }
+  return '';
+}
+
+/* ════════════════════════════════
+   RENDER
+════════════════════════════════ */
+function renderAll() {
+  renderDtf(); renderProject(); renderScope(); renderItp(); renderIns(); renderCl(); renderDash(); updateBadges();
+}
+
+function badge(s) {
+  const m={'Active':'b-green','Completed':'b-green','Pass':'b-green','Approved':'b-green','Standard':'b-blue','On Hold':'b-amber','Pending':'b-amber','In Progress':'b-amber','Variation Order(+)':'b-green','Variation Order(-)':'b-red','Cancelled':'b-red','Rejected':'b-red'};
+  return `<span class="badge ${m[s]||'b-blue'}">${s}</span>`;
+}
+function empty(n) { return `<tr><td colspan="${n}" class="loading-row" style="color:var(--text3);">ទំនេរ — ចុច ＋ Add ដើម្បីបន្ថែម</td></tr>`; }
+
+function renderDtf() {
+  const tb=document.getElementById('tb-dtf');
+  if(!DB.dtf.length){tb.innerHTML=empty(12);return;}
+  tb.innerHTML=DB.dtf.map((r,i)=>`
+    <tr ondblclick="openModal('dtf',${i})">
+      <td class="td-mono">${r.code}</td><td class="td-mono">${fmtDate(r.date)}</td>
+      <td class="td-primary td-clip">${r.project}</td><td class="td-muted">${r.subProject||'—'}</td>
+      <td class="td-muted td-clip">${r.docTitle||'—'}</td><td class="td-mono">${r.docNo||'—'}</td>
+      <td class="td-muted td-clip">${r.description||'—'}</td>
+      <td><span class="badge b-blue" style="font-size:9px;max-width:120px;overflow:hidden;text-overflow:ellipsis;display:inline-block;">${r.typeDoc||'—'}</span></td>
+      <td class="td-muted">${r.submitBy||'—'}</td><td class="td-muted">${r.receivedBy||'—'}</td>
+      <td class="td-muted">${r.remark||'—'}</td>
+      <td><div class="row-acts"><button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openModal('dtf',${i})">✏</button><button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();confirmDel('dtf',${i})">🗑</button></div></td>
+    </tr>`).join('');
+  document.getElementById('dtf-n0').textContent=DB.dtf.length;
+  document.getElementById('dtf-n1').textContent=DB.dtf.filter(r=>r.typeDoc==='Approval').length;
+  document.getElementById('dtf-n2').textContent=DB.dtf.filter(r=>r.typeDoc==='Signature & Return').length;
+  document.getElementById('dtf-n3').textContent=DB.dtf.filter(r=>r.typeDoc!=='Approval'&&r.typeDoc!=='Signature & Return').length;
+  document.getElementById('cnt-dtf').textContent=DB.dtf.length+' records';
+}
+function renderProject() {
+  const tb=document.getElementById('tb-project');
+  if(!DB.project.length){tb.innerHTML=empty(7);return;}
+  tb.innerHTML=DB.project.map((r,i)=>`
+    <tr ondblclick="openModal('project',${i})">
+      <td class="td-mono">${r.projectId}</td><td class="td-primary">${r.projectName}</td>
+      <td class="td-muted">${r.location||'—'}</td><td class="td-mono">${fmtDate(r.startDate)}</td>
+      <td class="td-mono">${fmtDate(r.finishDate)}</td><td>${badge(r.status||'Active')}</td>
+      <td><div class="row-acts"><button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openModal('project',${i})">✏</button><button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();confirmDel('project',${i})">🗑</button></div></td>
+    </tr>`).join('');
+  document.getElementById('cnt-project').textContent=DB.project.length+' records';
+}
+function renderScope() {
+  const tb=document.getElementById('tb-scope');
+  if(!DB.scope.length){tb.innerHTML=empty(9);return;}
+  tb.innerHTML=DB.scope.map((r,i)=>`
+    <tr ondblclick="openModal('scope',${i})">
+      <td class="td-mono">${r.projectId}</td><td class="td-primary td-clip">${r.projectName}</td>
+      <td class="td-muted">${r.loa}</td><td>${badge(r.typeLoa)}</td>
+      <td class="td-muted">${r.block}</td><td class="td-muted">${r.houseType}</td>
+      <td class="td-mono">${r.houseNo}</td><td class="td-mono">${r.amount?Number(r.amount).toLocaleString():'—'}</td>
+      <td><div class="row-acts"><button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openModal('scope',${i})">✏</button><button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();confirmDel('scope',${i})">🗑</button></div></td>
+    </tr>`).join('');
+  document.getElementById('cnt-scope').textContent=DB.scope.length+' records';
+}
+function renderItp() {
+  const tb=document.getElementById('tb-itp');
+  if(!DB.itp.length){tb.innerHTML=empty(11);return;}
+  tb.innerHTML=DB.itp.map((r,i)=>`
+    <tr ondblclick="openModal('itp',${i})">
+      <td class="td-mono">${fmtDate(r.date)}</td><td class="td-primary td-clip">${r.projectName}</td>
+      <td class="td-mono" style="font-size:10px;">${r.codeITP}</td><td class="td-muted">${r.contactPerson}</td>
+      <td class="td-muted">${r.mainBlock}</td><td class="td-muted">${r.subBlock}</td>
+      <td class="td-mono">${r.houseNo}</td><td class="td-muted">${r.location}</td>
+      <td class="td-mono">${fmtDate(r.issuedDate)}</td><td>${badge(r.subject||'—')}</td>
+      <td><div class="row-acts"><button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openModal('itp',${i})">✏</button><button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();confirmDel('itp',${i})">🗑</button></div></td>
+    </tr>`).join('');
+  fillSel('flt-itp-proj',[...new Set(DB.itp.map(r=>r.projectName))],true);
+  document.getElementById('cnt-itp').textContent=DB.itp.length+' records';
+}
+function renderIns() {
+  const tb=document.getElementById('tb-ins');
+  if(!DB.ins.length){tb.innerHTML=empty(12);return;}
+  const today=new Date().toISOString().slice(0,10);
+  tb.innerHTML=DB.ins.map((r,i)=>`
+    <tr ondblclick="openModal('ins',${i})">
+      <td class="td-mono">${fmtDate(r.dateInput)}</td><td class="td-primary td-clip">${r.project}</td>
+      <td class="td-mono">${r.codeINS}</td><td class="td-muted">${r.contactPerson}</td>
+      <td class="td-muted">${r.mainBlock}</td><td class="td-muted">${r.subBlock}</td>
+      <td class="td-mono">${r.houseNo}</td><td class="td-muted">${r.location}</td>
+      <td class="td-mono">${fmtDate(r.issuedDate)}</td><td>${badge(r.subject||'—')}</td>
+      <td class="td-muted">${r.remark||'—'}</td>
+      <td><div class="row-acts"><button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openModal('ins',${i})">✏</button><button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();confirmDel('ins',${i})">🗑</button></div></td>
+    </tr>`).join('');
+  const projs=[...new Set(DB.ins.map(r=>r.project))];
+  fillSel('flt-ins-proj',projs,true);
+  document.getElementById('ins-n0').textContent=DB.ins.length;
+  document.getElementById('ins-n1').textContent=projs.length;
+  document.getElementById('ins-n2').textContent=DB.ins.filter(r=>r.dateInput===today).length;
+  document.getElementById('cnt-ins').textContent=DB.ins.length+' records';
+}
+function renderCl() {
+  const tb=document.getElementById('tb-cl');
+  if(!DB.checklist.length){tb.innerHTML=empty(4);return;}
+  tb.innerHTML=DB.checklist.map((r,i)=>`
+    <tr ondblclick="openModal('checklist',${i})">
+      <td class="td-primary">${r.typeOfWork}</td><td class="td-mono">${r.codeINS}</td>
+      <td class="td-muted">${r.descriptionOfWork}</td>
+      <td><div class="row-acts"><button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openModal('checklist',${i})">✏</button><button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();confirmDel('checklist',${i})">🗑</button></div></td>
+    </tr>`).join('');
+  const types=[...new Set(DB.checklist.map(r=>r.typeOfWork))];
+  fillSelEl(document.getElementById('flt-cl-type'),types,true);
+  document.getElementById('cnt-cl').textContent=DB.checklist.length+' records';
+}
+function renderDash() {
+  document.getElementById('d-dtf').textContent=DB.dtf.length;
+  document.getElementById('d-proj').textContent=DB.project.length;
+  document.getElementById('d-itp').textContent=DB.itp.length;
+  document.getElementById('d-ins').textContent=DB.ins.length;
+  document.getElementById('d-projlist').innerHTML=DB.project.map(p=>`
+    <div class="dash-list-item">
+      <div><div class="dash-list-label">${p.projectName}</div><div class="dash-list-sub">${p.projectId} · ${p.location}</div></div>
+      ${badge(p.status)}
+    </div>`).join('');
+  document.getElementById('d-inslist').innerHTML=DB.ins.slice(-5).reverse().map(r=>`
+    <div class="dash-list-item">
+      <div><div class="dash-list-label">${r.codeINS}</div><div class="dash-list-sub">${r.project} · ${r.dateInput}</div></div>
+      ${badge(r.subject||'INS')}
+    </div>`).join('');
+}
+function updateBadges() {
+  document.getElementById('nb-dtf').textContent=DB.dtf.length;
+  document.getElementById('nb-project').textContent=DB.project.length;
+  document.getElementById('nb-scope').textContent=DB.scope.length;
+  document.getElementById('nb-itp').textContent=DB.itp.length;
+  document.getElementById('nb-ins').textContent=DB.ins.length;
+  document.getElementById('nb-cl').textContent=DB.checklist.length;
+}
+
+/* ════════════════════════════════
+   VIEWS
+════════════════════════════════ */
+const VM={
+  dtf:      {title:'DTF — Design Transmittal Form',sub:'Tab DTF · Sheet DC',add:'+ Add New DTF',fn:'dtf'},
+  project:  {title:'Project Management',sub:'Tab Project · Sheet DC',add:'+ Add Project',fn:'project'},
+  scope:    {title:'Scope of Work',sub:'Tab Scope · Sheet DC',add:'+ Add New Scope',fn:'scope'},
+  itp:      {title:'Inspection Plan (ITP)',sub:'Tab IPT · Sheet DC',add:'+ Add New ITP',fn:'itp'},
+  ins:      {title:'Inspection (INS)',sub:'Tab INS · Sheet DC',add:'+ Add New INS',fn:'ins'},
+  checklist:{title:'Check List',sub:'Tab CheckList · Sheet DC',add:'+ Add New Item',fn:'checklist'},
+  dashboard:{title:'Dashboard',sub:'Overview · Sheet DC',add:null,fn:null},
+};
+function showView(name,btn) {
+  currentView=name;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  if(btn) btn.classList.add('active');
+  const m=VM[name];
+  document.getElementById('viewTitle').textContent=m.title;
+  document.getElementById('viewSub').textContent=m.sub;
+  const ab=document.getElementById('topAddBtn');
+  if(m.add){ab.textContent=m.add;ab.style.display='';}else{ab.style.display='none';}
+}
+function openAddModal(){const m=VM[currentView];if(m&&m.fn)openModal(m.fn,null);}
+
+/* ════════════════════════════════
+   MODALS
+════════════════════════════════ */
+const MIDS={dtf:'modal-dtf',project:'modal-project',scope:'modal-scope',itp:'modal-itp',ins:'modal-ins',checklist:'modal-checklist'};
+
+function openModal(type,idx) {
+  editIdx=idx;
+  const isEdit=idx!==null&&idx!==undefined;
+  const labels={dtf:'DTF',project:'Project',scope:'Scope',itp:'ITP',ins:'INS',checklist:'Check List'};
+  const tid=type+'-mt'||type+'-modal-title';
+  const tel=document.getElementById(type+'-mt');
+  if(tel) tel.textContent=(isEdit?'Edit ':'Add New ')+labels[type];
+  const db=document.getElementById(type+'-delbtn');
+  if(db) db.style.display=isEdit?'':'none';
+  if(isEdit) fillForm(type,DB[type][idx]);
+  else clearForm(type);
+  document.getElementById(MIDS[type]).classList.add('open');
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');editIdx=null;}
+
+function clearForm(t) {
+  const d=new Date().toISOString().slice(0,10);
+  if(t==='dtf'){
+    v('dtf-code',nextCode('dtf'));v('dtf-date',d);
+    ['dtf-project','dtf-subproject','dtf-docno','dtf-desc','dtf-submitby','dtf-receivedby','dtf-remark'].forEach(id=>v(id,''));
+    document.getElementById('dtf-doctitle').value='';
+    document.querySelectorAll('input[name="dtf-type"]').forEach(r=>{r.checked=false;r.closest('.radio-opt').classList.remove('sel');});
+  }else if(t==='project'){
+    ['proj-id','proj-name','proj-loc'].forEach(id=>v(id,''));
+    v('proj-start',d);v('proj-end','');document.getElementById('proj-status').value='Active';
+  }else if(t==='scope'){
+    ['scope-projid','scope-loa','scope-block','scope-htype','scope-hno','scope-amount'].forEach(id=>v(id,''));
+    document.getElementById('scope-proj').value='';
+    document.querySelectorAll('input[name="sc-loa"]').forEach(r=>{r.closest('.loa-opt').classList.remove('sel');});
+    const def=document.querySelector('input[name="sc-loa"][value="Standard"]');
+    if(def){def.checked=true;def.closest('.loa-opt').classList.add('sel');}
+  }else if(t==='itp'){
+    v('itp-date',d);v('itp-code',nextCode('itp'));
+    ['itp-proj','itp-contact','itp-mainblock','itp-loc','itp-desc','itp-prep','itp-check','itp-appr'].forEach(id=>v(id,''));
+    v('itp-issued',d);document.getElementById('itp-subject').value='';
+    document.getElementById('itp-subblock').value='';document.getElementById('itp-houseno').value='';
+  }else if(t==='ins'){
+    v('ins-date',d);v('ins-code',nextCode('ins'));
+    document.getElementById('ins-itpno').value='';v('ins-remark','');
+    onInsItpChange('');
+  }else if(t==='checklist'){
+    ['cl-type','cl-code','cl-desc'].forEach(id=>v(id,''));
+  }
+}
+function fillForm(t,r){
+  if(t==='dtf'){
+    v('dtf-code',r.code);v('dtf-date',normDate(r.date));document.getElementById('dtf-project').value=r.project;
+    v('dtf-subproject',r.subProject||'');document.getElementById('dtf-doctitle').value=r.docTitle||'';
+    v('dtf-docno',r.docNo||'');v('dtf-desc',r.description||'');
+    v('dtf-submitby',r.submitBy||'');v('dtf-receivedby',r.receivedBy||'');v('dtf-remark',r.remark||'');
+    document.querySelectorAll('input[name="dtf-type"]').forEach(radio=>{
+      radio.checked=radio.value===r.typeDoc;
+      radio.closest('.radio-opt').classList.toggle('sel',radio.checked);
+    });
+  }else if(t==='project'){
+    v('proj-id',r.projectId);v('proj-name',r.projectName);v('proj-loc',r.location||'');
+    v('proj-start',normDate(r.startDate));v('proj-end',normDate(r.finishDate));document.getElementById('proj-status').value=r.status||'Active';
+  }else if(t==='scope'){
+    document.getElementById('scope-proj').value=r.projectName;v('scope-projid',r.projectId||'');
+    v('scope-loa',r.loa||'');v('scope-block',r.block||'');v('scope-htype',r.houseType||'');
+    v('scope-hno',r.houseNo||'');v('scope-amount',r.amount||'');
+    document.querySelectorAll('input[name="sc-loa"]').forEach(radio=>{
+      radio.checked=radio.value===r.typeLoa;
+      radio.closest('.loa-opt').classList.toggle('sel',radio.checked);
+    });
+  }else if(t==='itp'){
+    v('itp-date',normDate(r.date));v('itp-code',r.codeITP);document.getElementById('itp-proj').value=r.projectName;
+    v('itp-contact',r.contactPerson||'');v('itp-mainblock',r.mainBlock||'');
+    v('itp-loc',r.location||'');v('itp-issued',normDate(r.issuedDate||''));
+    v('itp-desc',r.description||'');v('itp-prep',r.preparedBy||'');
+    v('itp-check',r.checkBy||'');v('itp-appr',r.approvedBy||'');
+    onItpProjChange();
+    setTimeout(()=>{document.getElementById('itp-subblock').value=r.subBlock;onItpSubChange();
+      setTimeout(()=>{document.getElementById('itp-houseno').value=r.houseNo;document.getElementById('itp-subject').value=r.subject;},50);},50);
+  }else if(t==='ins'){
+    v('ins-date',normDate(r.dateInput));v('ins-code',r.codeINS);
+    document.getElementById('ins-itpno').value=r.itpNo;
+    v('ins-remark',r.remark||'');onInsItpChange(r.itpNo);
+  }else if(t==='checklist'){
+    v('cl-type',r.typeOfWork);v('cl-code',r.codeINS||'');v('cl-desc',r.descriptionOfWork);
+  }
+}
+function v(id,val){const e=document.getElementById(id);if(e)e.value=val;}
+
+function getFormData(t){
+  if(t==='dtf') return {code:g('dtf-code'),date:g('dtf-date'),project:document.getElementById('dtf-project').value,subProject:g('dtf-subproject'),docTitle:document.getElementById('dtf-doctitle').value,description:g('dtf-desc'),docNo:g('dtf-docno'),typeDoc:document.querySelector('input[name="dtf-type"]:checked')?.value||'',submitBy:g('dtf-submitby'),receivedBy:g('dtf-receivedby'),remark:g('dtf-remark')};
+  if(t==='project') return {projectId:g('proj-id'),projectName:g('proj-name'),location:g('proj-loc'),startDate:g('proj-start'),finishDate:g('proj-end'),status:document.getElementById('proj-status').value};
+  if(t==='scope') return {projectId:g('scope-projid'),projectName:document.getElementById('scope-proj').value,loa:g('scope-loa'),typeLoa:document.querySelector('input[name="sc-loa"]:checked')?.value||'Standard',block:g('scope-block'),houseType:g('scope-htype'),houseNo:g('scope-hno'),amount:g('scope-amount')};
+  if(t==='itp') return {date:g('itp-date'),projectName:document.getElementById('itp-proj').value,codeITP:g('itp-code'),contactPerson:g('itp-contact'),mainBlock:g('itp-mainblock'),subBlock:document.getElementById('itp-subblock').value,houseNo:document.getElementById('itp-houseno').value,location:g('itp-loc'),issuedDate:g('itp-issued'),subject:document.getElementById('itp-subject').value,description:g('itp-desc'),preparedBy:g('itp-prep'),checkBy:g('itp-check'),approvedBy:g('itp-appr')};
+  if(t==='ins') return {dateInput:g('ins-date'),project:g('ins-project'),codeINS:g('ins-code'),contactPerson:g('ins-contact'),mainBlock:g('ins-mainblock'),subBlock:g('ins-subblock'),houseNo:g('ins-houseno'),location:g('ins-location'),issuedDate:g('ins-issued'),subject:g('ins-subject'),remark:g('ins-remark'),itpNo:document.getElementById('ins-itpno').value};
+  if(t==='checklist') return {typeOfWork:g('cl-type'),codeINS:g('cl-code'),descriptionOfWork:g('cl-desc')};
+}
+function g(id){const e=document.getElementById(id);return e?e.value.trim():'';}
+
+const REQ={dtf:[['code','Code'],['date','Date'],['project','Project']],project:[['projectId','Project ID'],['projectName','Project Name']],scope:[['projectName','Project']],itp:[['date','Date'],['projectName','Project']],ins:[['dateInput','Date']],checklist:[['typeOfWork','Type of Work'],['descriptionOfWork','Description']]};
+
+async function saveRec(t) {
+  const rec=getFormData(t);
+  for(const [f,lbl] of (REQ[t]||[])){if(!rec[f]){toast('⚠ សូមបំពេញ '+lbl,'warning');return;}}
+  const isEdit=editIdx!==null&&editIdx!==undefined;
+  if(!DEMO_MODE){
+    toast('💾 Saving to Google Sheets...','info');
+    try{
+      const row=COLS[t].map(c=>rec[c]||'');
+      if(isEdit) await sheetsUpdate(CFG.tabs[t],DB[t][editIdx]._row,row);
+      else await sheetsAppend(CFG.tabs[t],row);
+      await syncTab(t);
+      setSyncState('ok');
+      toast(isEdit?'✅ Updated → Sheets':'✅ Saved → Sheets','success');
+    }catch(e){toast('❌ '+e.message,'error');return;}
+  } else {
+    if(isEdit){Object.assign(DB[t][editIdx],rec);toast('✅ Updated (Demo)','success');}
+    else{rec._row=DB[t].length+2;DB[t].push(rec);toast('✅ Saved (Demo)','success');}
+  }
+  closeModal(MIDS[t]);editIdx=null;
+  populateDropdowns();renderAll();
+}
+
+function confirmDel(t,i){
+  if(!confirm('លុប record នេះ?'))return;
+  if(!DEMO_MODE){
+    const row=DB[t][i]._row;
+    sheetsDeleteRow(CFG.tabs[t],row)
+      .then(()=>syncTabOnly(t))
+      .catch(e=>toast('❌ Delete error: '+e.message,'error'));
+  }
+  DB[t].splice(i,1);renderAll();updateBadges();toast('🗑 បានលុប','warning');
+}
+function deleteRec(t){if(editIdx===null)return;confirmDel(t,editIdx);closeModal(MIDS[t]);}
+
+/* ════════════════════════════════
+   FILTER / SEARCH
+════════════════════════════════ */
+function filterTable(id,q){Array.from(document.getElementById(id).rows).forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(q.toLowerCase())?'':'none';});}
+function filterByCol(id,ci,v){Array.from(document.getElementById(id).rows).forEach(r=>{const c=r.cells[ci];r.style.display=(!v||(c&&c.textContent.includes(v)))?'':'none';});}
+
+/* ════════════════════════════════
+   EXCEL EXPORT
+════════════════════════════════ */
+const XH={
+  dtf:['Code','Date','Project','Sub-Project','Document Title','Description','Doc N°','Type Document','Submit By','Received By','Remark'],
+  scope:['Project ID','Project Name','LOA','Type LOA','Block','House Type','House N°','Amount'],
+  itp:['Date','Project Name','Code ITP','Contact Person','Main Block','Sub Block','House N°','Location','Issued Date','Subject','Description','Prepared By','Check By','Approved By'],
+  ins:['Date Input','Project','Code INS','Contact Person','Main Block','Sub Block','House N°','Location','Issued Date','Subject','Remark','ITP N°'],
+  checklist:['Type of Work','Code INS','Description of Work'],
+};
+function exportExcel(t){
+  if(!DB[t]?.length){toast('⚠ ទំនេរ','warning');return;}
+  if(typeof XLSX==='undefined'){toast('⚠ SheetJS not loaded','error');return;}
+  const cols=COLS[t],hdrs=XH[t]||cols;
+  const rows=DB[t].map(r=>{const o={};hdrs.forEach((h,i)=>o[h]=r[cols[i]]||'');return o;});
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,t.toUpperCase());
+  XLSX.writeFile(wb,t+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  toast('📊 Export Excel ជោគជ័យ','success');
+}
+
+/* ════════════════════════════════
+   TOAST
+════════════════════════════════ */
+function toast(msg,type='info'){
+  const icons={success:'✅',error:'❌',warning:'⚠️',info:'ℹ️'};
+  const el=document.createElement('div');
+  el.className=`toast t${type[0]}`;
+  el.innerHTML=`<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  document.getElementById('toastWrap').appendChild(el);
+  setTimeout(()=>el.remove(),3500);
+}
+
+/* ════════════════════════════════
+   EVENTS
+════════════════════════════════ */
+document.addEventListener('change',e=>{
+  if(e.target.name==='dtf-type'){document.querySelectorAll('.radio-opt').forEach(o=>o.classList.remove('sel'));e.target.closest('.radio-opt')?.classList.add('sel');}
+  if(e.target.name==='sc-loa'){document.querySelectorAll('.loa-opt').forEach(o=>o.classList.remove('sel'));e.target.closest('.loa-opt')?.classList.add('sel');}
+});
+document.querySelectorAll('.modal-backdrop').forEach(b=>{
+  b.addEventListener('click',e=>{if(e.target===b)b.classList.remove('open');});
+});
+</script>
+</body>
+</html>
