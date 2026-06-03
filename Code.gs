@@ -525,6 +525,9 @@ function handlePrintDTF(data) {
     };
     set('B6', data.project);
     set('D6', data.subProject);
+    try {
+      tempSheet.getRange('D6').setHorizontalAlignment('center').setVerticalAlignment('middle');
+    } catch(e) {}
     set('J6', data.docNo);
     set('L6', data.docTitle);
     set('R6', dateStr);
@@ -557,10 +560,8 @@ function handlePrintDTF(data) {
     const td = (data.typeDoc || '').trim();
     Object.entries(chkMap).forEach(function(entry) {
       const cell = entry[0], types = entry[1];
-      // Only set TRUE for matching type — let template defaults handle unchecked boxes
-      if (types.indexOf(td) >= 0) {
-        try { tempSheet.getRange(cell).setValue(true); } catch(e) {}
-      }
+      // Explicitly set every checkbox: TRUE for match, FALSE for all others
+      try { tempSheet.getRange(cell).setValue(types.indexOf(td) >= 0); } catch(e) {}
     });
 
     SpreadsheetApp.flush();
