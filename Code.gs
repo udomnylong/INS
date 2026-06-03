@@ -640,10 +640,14 @@ function handlePrintITP(data) {
 
     // ── Work Type checkboxes C14-C17 ─────────────────────────────
     const wt = data.workType || '';
-    try { tempSheet.getRange('C14').setValue(wt === 'Structure Work'); } catch(e) {}
-    try { tempSheet.getRange('C15').setValue(wt === 'Architecture Work'); } catch(e) {}
-    try { tempSheet.getRange('C16').setValue(wt === 'MEP Work'); } catch(e) {}
-    try { tempSheet.getRange('C17').setValue(wt === 'Other'); } catch(e) {}
+    const chkRule = SpreadsheetApp.newDataValidation().requireCheckbox().build();
+    ['B14','B15','B16','B17'].forEach(function(cell) {
+      try { tempSheet.getRange(cell).setDataValidation(chkRule); } catch(e) {}
+    });
+    try { tempSheet.getRange('B14').setValue(wt === 'Structure Work'); } catch(e) {}
+    try { tempSheet.getRange('B15').setValue(wt === 'Architecture Work'); } catch(e) {}
+    try { tempSheet.getRange('B16').setValue(wt === 'MEP Work'); } catch(e) {}
+    try { tempSheet.getRange('B17').setValue(wt === 'Other'); } catch(e) {}
 
     // ── Description → C21:C26 (split by newline, max 6 rows) ────
     const lines = (data.description || '').split('\n').slice(0, 6);

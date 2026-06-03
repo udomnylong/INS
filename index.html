@@ -764,7 +764,7 @@ tbody tr:hover .row-acts{opacity:1;}
 const CFG = {
   // ── Option A: Google Apps Script Web App (ឆាប់ & ងាយ) ──
   // Deploy Code.gs as Web App → Copy URL here
-  apiUrl: 'https://script.google.com/macros/s/AKfycbwJKd_J-4ePOK63BodOBFsmrtxGWQDvThlTE8wupRprLLIZm96m3qGsxJyXNMQRJsYdNA/exec',
+  apiUrl: 'https://script.google.com/macros/s/AKfycbxgaFzYiU3jlSgrwVAMf-XfnA12jriw8jXwAEququeH8EFRUSzvOitcsDxGqqAWvrK5jw/exec',
   token:  'DMS_SECRET_2026',  // same as SECRET_TOKEN in Code.gs
 
   // ── Option B: Direct Sheets API (ត្រូវការ API Key) ──
@@ -1013,7 +1013,7 @@ function buildRowObj(tab, rowArr) {
     dtf:       ['Code','Date','Project','SubProject','DocumentTitle','Description','DocumentNo','TypeDocument','SubmitBy','ReceivedBy','Remark'],
     project:   ['ProjectID','ProjectCode','ProjectName','Location','StartDate','FinishDate','Status'],
     scope:     ['ProjectID','ProjectName','LOA','TypeLOA','Block','HouseType','HouseNo','Amount'],
-    itp:       ['Date','ProjectName','CodeITP','ContactPerson','MainBlock','SubBlock','HouseNo','Location','IssuedDate','Subject','Description','PreparedBy','CheckBy','ApprovedBy'],
+    itp:       ['Date','ProjectName','CodeITP','ContactPerson','MainBlock','SubBlock','HouseNo','Location','IssuedDate','Subject','WorkType','Description','PreparedBy','CheckBy','ApprovedBy'],
     ins:       ['DateInput','Project','CodeINS','ContactPerson','MainBlock','SubBlock','HouseNo','Location','IssuedDate','Subject','Remark','ITPNo'],
     checklist: ['TypeOfWork','CodeINS','DescriptionOfWork'],
   };
