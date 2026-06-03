@@ -555,7 +555,7 @@ function handlePrintDTF(data) {
       'B44': ['Construction'],
       'B45': ['Replace Drawing'],
       'G44': ['Other: For Action and Request'],
-      'B55': ['Request'],
+      'G45': ['Request'],
     };
     const td = (data.typeDoc || '').trim();
     Object.entries(chkMap).forEach(function(entry) {
