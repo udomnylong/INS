@@ -389,7 +389,7 @@ tbody tr:hover .row-acts{opacity:1;}
             <option>Approval</option><option>Signature & Return</option>
             <option>Approved Document Submission</option><option>Comment</option>
             <option>Site Instruction</option><option>Construction</option>
-            <option>Replace Drawing</option><option>Other: For Action and Request</option>
+            <option>Replace Drawing</option><option>Request</option><option>Other: For Action and Request</option>
           </select>
           <button class="btn btn-sm" onclick="exportExcel('dtf')">📊 Export Excel</button>
           <button class="btn btn-sm" onclick="window.print()">🖨 Print PDF</button>
@@ -544,6 +544,7 @@ tbody tr:hover .row-acts{opacity:1;}
           <option value="Site Instruction">Site Instruction</option>
           <option value="Construction">Construction</option>
           <option value="Replace Drawing">Replace Drawing</option>
+          <option value="Request">Request</option>
           <option value="Other: For Action and Request">Other: For Action and Request</option>
         </select>
       </div>
@@ -743,7 +744,7 @@ tbody tr:hover .row-acts{opacity:1;}
 const CFG = {
   // ── Option A: Google Apps Script Web App (ឆាប់ & ងាយ) ──
   // Deploy Code.gs as Web App → Copy URL here
-  apiUrl: 'https://script.google.com/macros/s/AKfycbyUCuc4d6l0tP6Nz_xKYB2ybSeC_iCV6B7aZAS5KDQAdhrxwZTrRYHgVLMJvhyRM_ityQ/exec',
+  apiUrl: 'https://script.google.com/macros/s/AKfycbwwQp-BeNpleXcU5DSt2Z2fXmBZFTXMXKkl-J1xnO0q5WPetb8vJij9IpjJPbOT_w8y8Q/exec',
   token:  'DMS_SECRET_2026',  // same as SECRET_TOKEN in Code.gs
 
   // ── Option B: Direct Sheets API (ត្រូវការ API Key) ──

@@ -547,15 +547,15 @@ function handlePrintDTF(data) {
     // ── Type Document checkboxes ─────────────────────────────────
     // cell → matching typeDoc value(s) in our system
     const chkMap = {
-      'B44': ['Approval'],
-      'B45': ['Comment'],
-      'B46': ['Construction'],
-      'B47': ['Replace Drawing'],
-      'G44': ['Signature & Return'],
-      'G45': ['Site Instruction'],
-      'G46': ['Other: For Action and Request'],
-      'G47': ['Other: For Action and Request'],
-      'L44': ['Approved Document Submission'],
+      'B42': ['Approval'],
+      'G42': ['Signature & Return'],
+      'K42': ['Approved Document Submission'],
+      'B43': ['Comment'],
+      'G43': ['Site Instruction'],
+      'B44': ['Construction'],
+      'B45': ['Replace Drawing'],
+      'G44': ['Other: For Action and Request'],
+      'B55': ['Request'],
     };
     const td = (data.typeDoc || '').trim();
     Object.entries(chkMap).forEach(function(entry) {
@@ -614,7 +614,7 @@ function addDataValidations() {
       .requireValueInList([
         'Approval','Signature & Return','Approved Document Submission',
         'Comment','Site Instruction','Construction','Replace Drawing',
-        'Other: For Action and Request'
+        'Request','Other: For Action and Request'
       ], true).build();
     dtfSheet.getRange('H2:H1000').setDataValidation(typeRule);
   }
