@@ -44,11 +44,11 @@ const TAB_CONFIG = {
     ]
   },
   Project: {
-    headers: ['ProjectID','ProjectName','Location','StartDate','FinishDate','Status'],
+    headers: ['ProjectID','ProjectCode','ProjectName','Location','StartDate','FinishDate','Status'],
     color:   '#fbbc04',
     sample: [
-      ['PRJ-001','Angkor National Residence PH1','Siem Reap','2025-01-01','2027-12-31','Active'],
-      ['PRJ-002','Phnom Penh Villa Project','Phnom Penh','2025-06-01','2026-12-31','Active'],
+      ['PRJ-001','ANJ-PH1','Angkor National Residence PH1','Siem Reap','2025-01-01','2027-12-31','Active'],
+      ['PRJ-002','PPV','Phnom Penh Villa Project','Phnom Penh','2025-06-01','2026-12-31','Active'],
     ]
   },
   Scope: {
@@ -97,13 +97,13 @@ const TAB_CONFIG = {
     ]
   },
   DocumentType: {
-    headers: ['DocumentType'],
+    headers: ['DocumentCode','DocumentType'],
     color:   '#5d4037',
     sample: [
-      ['Architectural Drawing'],['Structural Drawing'],['M&E Drawing'],
-      ['Shop Drawing'],['As-Built Drawing'],['Technical Specification'],
-      ['Method Statement'],['Inspection Request'],['Material Submittal'],
-      ['RFI - Request for Information'],['Transmittal Letter'],['Site Instruction'],
+      ['DT-001','Architectural Drawing'],['DT-002','Structural Drawing'],['DT-003','M&E Drawing'],
+      ['DT-004','Shop Drawing'],['DT-005','As-Built Drawing'],['DT-006','Technical Specification'],
+      ['DT-007','Method Statement'],['DT-008','Inspection Request'],['DT-009','Material Submittal'],
+      ['DT-010','RFI - Request for Information'],['DT-011','Transmittal Letter'],['DT-012','Site Instruction'],
     ]
   },
 };
@@ -618,12 +618,12 @@ function addDataValidations() {
     dtfSheet.getRange('H2:H1000').setDataValidation(typeRule);
   }
 
-  // Project — Status dropdown
+  // Project — Status dropdown (col G after adding ProjectCode)
   const projSheet = ss.getSheetByName('Project');
   if (projSheet) {
     const statusRule = SpreadsheetApp.newDataValidation()
       .requireValueInList(['Active','Completed','On Hold','Cancelled'], true).build();
-    projSheet.getRange('F2:F1000').setDataValidation(statusRule);
+    projSheet.getRange('G2:G1000').setDataValidation(statusRule);
   }
 
   // Scope — TypeLOA dropdown
