@@ -36,12 +36,7 @@ const TAB_CONFIG = {
   DTF: {
     headers: ['Code','Date','Project','SubProject','DocumentTitle','Description','DocumentNo','TypeDocument','SubmitBy','ReceivedBy','Remark'],
     color:   '#34a853',
-    sample: [
-      ['0001','2026-05-10','Angkor National Residence PH1','Phase 1A','Structural Drawing','Foundation layout Block A','SD-001','Approval','Sokha Chan','Dara Meng',''],
-      ['0002','2026-05-14','Angkor National Residence PH1','Phase 1A','Architectural Drawing','Floor plan VT1','AD-002','Signature & Return','Sokha Chan','Dara Meng','Urgent'],
-      ['0003','2026-05-18','Phnom Penh Villa Project','','Shop Drawing','M&E installation drawing','MEP-003','Comment','Ratha Ly','Vanna Keo',''],
-      ['0004','2026-05-22','Angkor National Residence PH1','Phase 1B','As-Built Drawing','Block B foundation','AB-004','Approved Document Submission','Sokha Chan','Dara Meng','Final'],
-    ]
+    sample: []
   },
   Project: {
     headers: ['ProjectID','ProjectCode','ProjectName','Location','StartDate','FinishDate','Status'],
@@ -62,21 +57,14 @@ const TAB_CONFIG = {
     ]
   },
   IPT: {
-    headers: ['Date','ProjectName','CodeITP','ContactPerson','MainBlock','SubBlock','HouseNo','Location','IssuedDate','Subject','Description','PreparedBy','CheckBy','ApprovedBy'],
+    headers: ['Date','ProjectName','CodeITP','ContactPerson','MainBlock','SubBlock','HouseNo','Location','IssuedDate','Subject','WorkType','Description','PreparedBy','CheckBy','ApprovedBy'],
     color:   '#9c27b0',
-    sample: [
-      ['2026-05-10','Angkor National Residence PH1','HE-ANJ-PH1-IPT-LHB-0001','Dara Chan','Block A','A1','H001','Level 1','2026-05-12','Foundation','Foundation rebar inspection','Sokha','Ratha','Vanna'],
-      ['2026-05-18','Angkor National Residence PH1','HE-ANJ-PH1-IPT-LHB-0002','Dara Chan','Block A','A1','H002','Level 1','2026-05-20','Rebar','Rebar inspection L1','Sokha','Ratha','Vanna'],
-      ['2026-05-25','Angkor National Residence PH1','HE-ANJ-PH1-IPT-LHB-0003','Dara Chan','Block B','B1','H003','Level 2','2026-05-27','Concrete','Concrete pour check','Sokha','Ratha','Vanna'],
-    ]
+    sample: []
   },
   INS: {
     headers: ['DateInput','Project','CodeINS','ContactPerson','MainBlock','SubBlock','HouseNo','Location','IssuedDate','Subject','Remark','ITPNo'],
     color:   '#00897b',
-    sample: [
-      ['2026-05-13','Angkor National Residence PH1','INS-0001','Dara Chan','Block A','A1','H001','Level 1','2026-05-12','Foundation','Pass','HE-ANJ-PH1-IPT-LHB-0001'],
-      ['2026-05-21','Angkor National Residence PH1','INS-0002','Dara Chan','Block A','A1','H002','Level 1','2026-05-20','Rebar','Pending correction','HE-ANJ-PH1-IPT-LHB-0002'],
-    ]
+    sample: []
   },
   CheckList: {
     headers: ['TypeOfWork','CodeINS','DescriptionOfWork'],
@@ -224,6 +212,7 @@ function doPost(e) {
     if (action === 'delete')   return handleDelete(tab, body.row);
     if (action === 'login')    return handleLogin(body.username, body.password);
     if (action === 'printDTF') return handlePrintDTF(body.data || {});
+    if (action === 'printITP') return handlePrintITP(body.data || {});
 
     return jsonResp({ ok: false, error: 'Unknown action: ' + action });
   } catch (err) {
@@ -582,6 +571,108 @@ function handlePrintDTF(data) {
     ss.deleteSheet(tempSheet);
 
     return jsonResp({ ok: true, pdf: pdfB64, filename: 'DTF-' + (data.docNo || data.code || 'form') + '.pdf' });
+
+  } catch(err) {
+    return jsonResp({ ok: false, error: err.toString() });
+  }
+}
+
+// ────────────────────────────────────────────────────────────────
+//  PRINT ITP FORM  (ITP_FORM tab → PDF)
+// ────────────────────────────────────────────────────────────────
+function handlePrintITP(data) {
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const templateSheet = ss.getSheetByName('ITP_FORM');
+    if (!templateSheet) return jsonResp({ ok: false, error: 'ITP_FORM tab រកមិនឃើញ' });
+
+    // Copy template → temp sheet
+    const tempSheet = templateSheet.copyTo(ss);
+    const tempName  = '_ITP_' + Date.now();
+    tempSheet.setName(tempName);
+    ss.setActiveSheet(tempSheet);
+    ss.moveActiveSheet(ss.getNumSheets());
+
+    // ── Parse dates ──────────────────────────────────────────────
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    let issuedStr = '', dateB36 = '';
+    if (data.issuedDate) {
+      const dt = new Date(data.issuedDate);
+      if (!isNaN(dt)) {
+        const dd = String(dt.getDate()).padStart(2, '0');
+        const mm = String(dt.getMonth() + 1).padStart(2, '0');
+        const yy = String(dt.getFullYear()).slice(-2);
+        issuedStr = dd + '/' + mm + '/' + yy;
+      }
+    }
+    if (data.date) {
+      const dt = new Date(data.date);
+      if (!isNaN(dt)) {
+        const dd = String(dt.getDate()).padStart(2, '0');
+        const mon = MONTHS[dt.getMonth()];
+        const yyyy = dt.getFullYear();
+        dateB36 = 'Date : ' + dd + ' ' + mon + ' ' + yyyy;
+      }
+    }
+
+    // ── Helper ───────────────────────────────────────────────────
+    const set = function(cell, val) {
+      if (val !== undefined && val !== null && val !== '') {
+        try { tempSheet.getRange(cell).setValue(val); } catch(e) {}
+      }
+    };
+
+    // ── Header fields ────────────────────────────────────────────
+    set('E3', data.projectName);          // Project
+    set('E4', data.codeITP);             // CODE ITP
+    set('D6', data.contactPerson);       // Contact Person
+    set('D7', data.mainBlock);           // Main Block
+    set('D8', data.subBlock);            // Sub Block
+    set('H8', data.houseNo);             // House N°
+    set('D9', data.location);            // Location
+    set('D10', issuedStr);               // Issued Date
+    set('B36', dateB36);                 // Date : DD MMM YYYY
+
+    // ── D11: Subject label ───────────────────────────────────────
+    if (data.subject) {
+      set('D11', 'Request for Inspection and test plan of ' + data.subject);
+    }
+
+    // ── Work Type checkboxes B14-B17 ─────────────────────────────
+    const wt = data.workType || '';
+    try { tempSheet.getRange('B14').setValue(wt.includes('Structure Work')); } catch(e) {}
+    try { tempSheet.getRange('B15').setValue(wt.includes('Architecture Work')); } catch(e) {}
+    try { tempSheet.getRange('B16').setValue(wt.includes('MEP Work')); } catch(e) {}
+    try { tempSheet.getRange('B17').setValue(wt.includes('Other')); } catch(e) {}
+
+    // ── Description → C21:C26 (split by newline, max 6 rows) ────
+    const lines = (data.description || '').split('\n').slice(0, 6);
+    for (let i = 0; i < 6; i++) {
+      try { tempSheet.getRange('C' + (21 + i)).setValue(lines[i] || ''); } catch(e) {}
+    }
+
+    // ── Prepared / Check / Approved By ──────────────────────────
+    set('B33', 'Name : ' + (data.preparedBy || ''));
+    set('F33', 'Name : ' + (data.checkBy || ''));
+    set('H33', 'Name : ' + (data.approvedBy || 'Mr. Seng Nora'));
+
+    SpreadsheetApp.flush();
+
+    // ── Export as PDF ────────────────────────────────────────────
+    const gid   = tempSheet.getSheetId();
+    const token = ScriptApp.getOAuthToken();
+    const url   = 'https://docs.google.com/spreadsheets/d/' + SPREADSHEET_ID +
+      '/export?format=pdf&gid=' + gid +
+      '&size=A4&portrait=true&fitw=true' +
+      '&gridlines=false&printtitle=false&sheetnames=false' +
+      '&pagenumbers=false&attachment=true';
+
+    const resp   = UrlFetchApp.fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+    const pdfB64 = Utilities.base64Encode(resp.getContent());
+
+    ss.deleteSheet(tempSheet);
+
+    return jsonResp({ ok: true, pdf: pdfB64, filename: 'ITP-' + (data.codeITP || 'form') + '.pdf' });
 
   } catch(err) {
     return jsonResp({ ok: false, error: err.toString() });

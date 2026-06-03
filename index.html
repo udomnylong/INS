@@ -191,7 +191,7 @@ tbody tr:hover .row-acts{opacity:1;}
 .radio-opt.sel{border-color:var(--accent);background:var(--accent-glow);color:var(--accent);}
 .loa-row{display:flex;gap:8px;flex-wrap:wrap;}
 .loa-opt{display:flex;align-items:center;gap:7px;padding:7px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;font-size:12px;transition:all 0.15s;}
-.loa-opt input[type=radio]{accent-color:var(--accent);}
+.loa-opt input[type=radio],.loa-opt input[type=checkbox]{accent-color:var(--accent);}
 .loa-opt.sel{border-color:var(--accent);background:var(--accent-glow);}
 
 /* vlookup panel */
@@ -657,16 +657,36 @@ tbody tr:hover .row-acts{opacity:1;}
         <div class="fg"><label class="fl">Issued Date</label><input class="fi" id="itp-issued" type="date"></div>
         <div class="fg"><label class="fl">Subject</label><select class="fs" id="itp-subject"><option value="">-- Select --</option></select></div>
       </div>
-      <div class="fg"><label class="fl">Description</label><textarea class="fta" id="itp-desc" rows="2" placeholder="Description..."></textarea></div>
+      <div class="fg">
+        <label class="fl">Work Type</label>
+        <div class="loa-row">
+          <label class="loa-opt"><input type="radio" name="itp-wt" value="Structure Work" onchange="onItpWorkTypeChange()"> Structure Work</label>
+          <label class="loa-opt"><input type="radio" name="itp-wt" value="Architecture Work" onchange="onItpWorkTypeChange()"> Architecture Work</label>
+          <label class="loa-opt"><input type="radio" name="itp-wt" value="MEP Work" onchange="onItpWorkTypeChange()"> MEP Work</label>
+          <label class="loa-opt"><input type="radio" name="itp-wt" value="Other" onchange="onItpWorkTypeChange()"> Other (to Specify)</label>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Description</label>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:11px;color:var(--text3);width:18px;text-align:right;">1</span><input class="fi" id="itp-desc-1" placeholder="Row 1..." style="flex:1;margin-bottom:0;"></div>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:11px;color:var(--text3);width:18px;text-align:right;">2</span><input class="fi" id="itp-desc-2" placeholder="Row 2..." style="flex:1;margin-bottom:0;"></div>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:11px;color:var(--text3);width:18px;text-align:right;">3</span><input class="fi" id="itp-desc-3" placeholder="Row 3..." style="flex:1;margin-bottom:0;"></div>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:11px;color:var(--text3);width:18px;text-align:right;">4</span><input class="fi" id="itp-desc-4" placeholder="Row 4..." style="flex:1;margin-bottom:0;"></div>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:11px;color:var(--text3);width:18px;text-align:right;">5</span><input class="fi" id="itp-desc-5" placeholder="Row 5..." style="flex:1;margin-bottom:0;"></div>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:11px;color:var(--text3);width:18px;text-align:right;">6</span><input class="fi" id="itp-desc-6" placeholder="Row 6..." style="flex:1;margin-bottom:0;"></div>
+        </div>
+      </div>
       <div class="fr3">
         <div class="fg"><label class="fl">Prepared By</label><input class="fi" id="itp-prep" placeholder="Name"></div>
         <div class="fg"><label class="fl">Check By</label><input class="fi" id="itp-check" placeholder="Name"></div>
-        <div class="fg"><label class="fl">Approved By</label><input class="fi" id="itp-appr" placeholder="Name"></div>
+        <div class="fg"><label class="fl">Approved By</label><input class="fi" id="itp-appr" placeholder="Name" value="Mr. Seng Nora"></div>
       </div>
     </div>
     <div class="modal-ft">
       <button class="btn btn-danger btn-sm" id="itp-delbtn" style="margin-right:auto;display:none;" onclick="deleteRec('itp')">🗑 លុប</button>
       <button class="btn btn-ghost" onclick="closeModal('modal-itp')">បោះបង់</button>
+      <button class="btn btn-ghost" id="itp-printbtn" style="display:none;" onclick="printITP(editIdx)">🖨 Print Form</button>
       <button class="btn btn-primary" onclick="saveRec('itp')">💾 Save → Sheets</button>
     </div>
   </div>
@@ -744,7 +764,7 @@ tbody tr:hover .row-acts{opacity:1;}
 const CFG = {
   // ── Option A: Google Apps Script Web App (ឆាប់ & ងាយ) ──
   // Deploy Code.gs as Web App → Copy URL here
-  apiUrl: 'https://script.google.com/macros/s/AKfycbyAR83UYbvZH7l7Xvry3BsBsiInq0jy6boCFgprDHEY0ulXGtxqwWDY63q2cezSa7O1Kw/exec',
+  apiUrl: 'https://script.google.com/macros/s/AKfycbzsbTGbmqOXtoNT5hgxKwHt8rfR5KWKD5jbuwEdDE_nltffNYshVR_vWzpbTX85MyrN/exec',
   token:  'DMS_SECRET_2026',  // same as SECRET_TOKEN in Code.gs
 
   // ── Option B: Direct Sheets API (ត្រូវការ API Key) ──
@@ -1084,7 +1104,7 @@ const COLS = {
   dtf:       ['code','date','project','subProject','docTitle','description','docNo','typeDoc','submitBy','receivedBy','remark'],
   project:   ['projectId','projectCode','projectName','location','startDate','finishDate','status'],
   scope:     ['projectId','projectName','loa','typeLoa','block','houseType','houseNo','amount'],
-  itp:       ['date','projectName','codeITP','contactPerson','mainBlock','subBlock','houseNo','location','issuedDate','subject','description','preparedBy','checkBy','approvedBy'],
+  itp:       ['date','projectName','codeITP','contactPerson','mainBlock','subBlock','houseNo','location','issuedDate','subject','workType','description','preparedBy','checkBy','approvedBy'],
   ins:       ['dateInput','project','codeINS','contactPerson','mainBlock','subBlock','houseNo','location','issuedDate','subject','remark','itpNo'],
   checklist: ['typeOfWork','codeINS','descriptionOfWork'],
   doctype:   ['documentCode','documentType'],
@@ -1113,55 +1133,14 @@ async function syncTab(t) {
    SAMPLE DATA
 ════════════════════════════════ */
 function loadSampleData() {
-  DB.project = [
-    {_row:2,projectId:'PRJ-001',projectCode:'ANJ-PH1',projectName:'Angkor National Residence PH1',location:'Siem Reap',startDate:'2025-01-01',finishDate:'2027-12-31',status:'Active'},
-    {_row:3,projectId:'PRJ-002',projectCode:'PPV',projectName:'Phnom Penh Villa Project',location:'Phnom Penh',startDate:'2025-06-01',finishDate:'2026-12-31',status:'Active'},
-  ];
-  DB.scope = [
-    {_row:2,projectId:'PRJ-001',projectName:'Angkor National Residence PH1',loa:'LOA-001',typeLoa:'Standard',block:'Block A',houseType:'VT1',houseNo:'H001',amount:'85000'},
-    {_row:3,projectId:'PRJ-001',projectName:'Angkor National Residence PH1',loa:'LOA-002',typeLoa:'Variation Order(+)',block:'Block A',houseType:'VT2',houseNo:'H002',amount:'92000'},
-    {_row:4,projectId:'PRJ-001',projectName:'Angkor National Residence PH1',loa:'LOA-003',typeLoa:'Standard',block:'Block B',houseType:'VT1',houseNo:'H003',amount:'85000'},
-    {_row:5,projectId:'PRJ-002',projectName:'Phnom Penh Villa Project',loa:'LOA-004',typeLoa:'Standard',block:'Block C',houseType:'VT3',houseNo:'H001',amount:'120000'},
-  ];
-  DB.checklist = [
-    {_row:2,typeOfWork:'Foundation',codeINS:'INS-0001',descriptionOfWork:'Check rebar alignment and spacing'},
-    {_row:3,typeOfWork:'Foundation',codeINS:'INS-0001',descriptionOfWork:'Verify concrete cover ≥ 50mm'},
-    {_row:4,typeOfWork:'Rebar',codeINS:'INS-0002',descriptionOfWork:'Bar size correct per drawing'},
-    {_row:5,typeOfWork:'Rebar',codeINS:'INS-0002',descriptionOfWork:'Lap length adequate (40d min)'},
-    {_row:6,typeOfWork:'Concrete',codeINS:'INS-0003',descriptionOfWork:'Slump test 100-150mm'},
-    {_row:7,typeOfWork:'Concrete',codeINS:'INS-0003',descriptionOfWork:'Cube samples taken (3 sets)'},
-    {_row:8,typeOfWork:'Formwork',codeINS:'INS-0004',descriptionOfWork:'Formwork alignment plumb ±5mm'},
-  ];
-  DB.docTypes = ['Architectural Drawing','Structural Drawing','M&E Drawing','Shop Drawing','As-Built Drawing','Technical Specification','Method Statement'];
-  DB.doctype = [
-    {_row:2,documentCode:'DT-001',documentType:'Architectural Drawing'},
-    {_row:3,documentCode:'DT-002',documentType:'Structural Drawing'},
-    {_row:4,documentCode:'DT-003',documentType:'M&E Drawing'},
-    {_row:5,documentCode:'DT-004',documentType:'Shop Drawing'},
-    {_row:6,documentCode:'DT-005',documentType:'As-Built Drawing'},
-    {_row:7,documentCode:'DT-006',documentType:'Technical Specification'},
-    {_row:8,documentCode:'DT-007',documentType:'Method Statement'},
-    {_row:9,documentCode:'DT-008',documentType:'Inspection Request'},
-    {_row:10,documentCode:'DT-009',documentType:'Material Submittal'},
-    {_row:11,documentCode:'DT-010',documentType:'RFI - Request for Information'},
-    {_row:12,documentCode:'DT-011',documentType:'Transmittal Letter'},
-    {_row:13,documentCode:'DT-012',documentType:'Site Instruction'},
-  ];
-  DB.itp = [
-    {_row:2,date:'2026-05-10',projectName:'Angkor National Residence PH1',codeITP:'HE-ANJ-PH1-IPT-LHB-0001',contactPerson:'Dara Chan',mainBlock:'Block A',subBlock:'A1',houseNo:'H001',location:'Level 1',issuedDate:'2026-05-12',subject:'Foundation',description:'Foundation inspection',preparedBy:'Sokha',checkBy:'Ratha',approvedBy:'Vanna'},
-    {_row:3,date:'2026-05-18',projectName:'Angkor National Residence PH1',codeITP:'HE-ANJ-PH1-IPT-LHB-0002',contactPerson:'Dara Chan',mainBlock:'Block A',subBlock:'A1',houseNo:'H002',location:'Level 1',issuedDate:'2026-05-20',subject:'Rebar',description:'Rebar inspection',preparedBy:'Sokha',checkBy:'Ratha',approvedBy:'Vanna'},
-    {_row:4,date:'2026-05-25',projectName:'Angkor National Residence PH1',codeITP:'HE-ANJ-PH1-IPT-LHB-0003',contactPerson:'Dara Chan',mainBlock:'Block B',subBlock:'B1',houseNo:'H003',location:'Level 2',issuedDate:'2026-05-27',subject:'Concrete',description:'Concrete pour',preparedBy:'Sokha',checkBy:'Ratha',approvedBy:'Vanna'},
-  ];
-  DB.ins = [
-    {_row:2,dateInput:'2026-05-13',project:'Angkor National Residence PH1',codeINS:'INS-0001',contactPerson:'Dara Chan',mainBlock:'Block A',subBlock:'A1',houseNo:'H001',location:'Level 1',issuedDate:'2026-05-12',subject:'Foundation',remark:'Pass',itpNo:'HE-ANJ-PH1-IPT-LHB-0001'},
-    {_row:3,dateInput:'2026-05-21',project:'Angkor National Residence PH1',codeINS:'INS-0002',contactPerson:'Dara Chan',mainBlock:'Block A',subBlock:'A1',houseNo:'H002',location:'Level 1',issuedDate:'2026-05-20',subject:'Rebar',remark:'Pending correction',itpNo:'HE-ANJ-PH1-IPT-LHB-0002'},
-  ];
-  DB.dtf = [
-    {_row:2,code:'0001',date:'2026-05-10',project:'Angkor National Residence PH1',subProject:'Phase 1A',docTitle:'Structural Drawing',description:'Foundation layout Block A',docNo:'SD-001',typeDoc:'Approval',submitBy:'Sokha Chan',receivedBy:'Dara Meng',remark:''},
-    {_row:3,code:'0002',date:'2026-05-14',project:'Angkor National Residence PH1',subProject:'Phase 1A',docTitle:'Architectural Drawing',description:'Floor plan VT1',docNo:'AD-002',typeDoc:'Signature & Return',submitBy:'Sokha Chan',receivedBy:'Dara Meng',remark:'Urgent'},
-    {_row:4,code:'0003',date:'2026-05-18',project:'Phnom Penh Villa Project',subProject:'',docTitle:'Shop Drawing',description:'M&E installation',docNo:'MEP-003',typeDoc:'Comment',submitBy:'Ratha Ly',receivedBy:'Vanna Keo',remark:''},
-    {_row:5,code:'0004',date:'2026-05-22',project:'Angkor National Residence PH1',subProject:'Phase 1B',docTitle:'As-Built Drawing',description:'Block B foundation',docNo:'AB-004',typeDoc:'Approved Document Submission',submitBy:'Sokha Chan',receivedBy:'Dara Meng',remark:'Final'},
-  ];
+  DB.project   = [];
+  DB.scope     = [];
+  DB.checklist = [];
+  DB.docTypes  = [];
+  DB.doctype   = [];
+  DB.itp       = [];
+  DB.ins       = [];
+  DB.dtf       = [];
 }
 
 /* ════════════════════════════════
@@ -1175,13 +1154,14 @@ function populateDropdowns() {
   fillSel('flt-itp-proj', pNames, true);
   fillSel('flt-ins-proj', pNames, true);
   fillSel('ins-itpno', DB.itp.map(r=>r.codeITP));
-  const subjects = [...new Set(DB.checklist.map(c=>c.typeOfWork))];
+  const subjects = [...new Set(DB.checklist.map(c=>c.descriptionOfWork).filter(Boolean))];
   fillSel('itp-subject', subjects);
   const docTypeNames = DB.doctype.length ? DB.doctype.map(d=>d.documentType).filter(Boolean) : DB.docTypes;
   fillSel('dtf-doctitle', docTypeNames);
-  // cl type filter
+  // cl type filter (uses typeOfWork, not descriptionOfWork)
+  const clTypes = [...new Set(DB.checklist.map(c=>c.typeOfWork).filter(Boolean))];
   const clSel = document.getElementById('flt-cl-type');
-  if (clSel) { fillSelEl(clSel, subjects, true); }
+  if (clSel) { fillSelEl(clSel, clTypes, true); }
 }
 
 function fillSel(id, opts, keepFirst=false) {
@@ -1211,6 +1191,18 @@ function onItpSubChange() {
   const sub  = document.getElementById('itp-subblock').value;
   const houses = [...new Set(DB.scope.filter(s=>s.projectName===proj && s.block===sub).map(s=>s.houseNo))];
   fillSel('itp-houseno', houses);
+}
+function onItpWorkTypeChange() {
+  document.querySelectorAll('input[name="itp-wt"]').forEach(r=>{
+    r.closest('.loa-opt').classList.toggle('sel', r.checked);
+  });
+  const sel = document.querySelector('input[name="itp-wt"]:checked');
+  const wt  = sel ? sel.value : '';
+  const filtered = wt
+    ? [...new Set(DB.checklist.filter(c=>c.typeOfWork===wt).map(c=>c.descriptionOfWork).filter(Boolean))]
+    : [...new Set(DB.checklist.map(c=>c.descriptionOfWork).filter(Boolean))];
+  fillSel('itp-subject', filtered);
+  document.getElementById('itp-subject').value = '';
 }
 function onInsItpChange(val) {
   const itp = DB.itp.find(r=>r.codeITP===val);
@@ -1323,7 +1315,7 @@ function renderItp() {
       <td class="td-muted">${r.mainBlock}</td><td class="td-muted">${r.subBlock}</td>
       <td class="td-mono">${r.houseNo}</td><td class="td-muted">${r.location}</td>
       <td class="td-mono">${fmtDate(r.issuedDate)}</td><td>${badge(r.subject||'—')}</td>
-      <td><div class="row-acts"><button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openModal('itp',${i})">✏</button><button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();confirmDel('itp',${i})">🗑</button></div></td>
+      <td><div class="row-acts"><button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openModal('itp',${i})">✏</button><button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();printITP(${i})" title="Print ITP Form">🖨</button><button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();confirmDel('itp',${i})">🗑</button></div></td>
     </tr>`).join('');
   fillSel('flt-itp-proj',[...new Set(DB.itp.map(r=>r.projectName))],true);
   document.getElementById('cnt-itp').textContent=DB.itp.length+' records';
@@ -1429,6 +1421,8 @@ function openModal(type,idx) {
   if(db) db.style.display=isEdit?'':'none';
   const pb=document.getElementById('dtf-printbtn');
   if(pb) pb.style.display=(type==='dtf'&&isEdit)?'':'none';
+  const ipb=document.getElementById('itp-printbtn');
+  if(ipb) ipb.style.display=(type==='itp'&&isEdit)?'':'none';
   if(isEdit) fillForm(type,DB[type][idx]);
   else clearForm(type);
   document.getElementById(MIDS[type]).classList.add('open');
@@ -1453,9 +1447,13 @@ function clearForm(t) {
     if(def){def.checked=true;def.closest('.loa-opt').classList.add('sel');}
   }else if(t==='itp'){
     v('itp-date',d);v('itp-code',nextCode('itp'));
-    ['itp-proj','itp-contact','itp-mainblock','itp-loc','itp-desc','itp-prep','itp-check','itp-appr'].forEach(id=>v(id,''));
+    ['itp-proj','itp-contact','itp-mainblock','itp-loc','itp-prep','itp-check'].forEach(id=>v(id,''));
+    v('itp-appr','Mr. Seng Nora');
     v('itp-issued',d);document.getElementById('itp-subject').value='';
     document.getElementById('itp-subblock').value='';document.getElementById('itp-houseno').value='';
+    [1,2,3,4,5,6].forEach(i=>v('itp-desc-'+i,''));
+    document.querySelectorAll('input[name="itp-wt"]').forEach(r=>{r.checked=false;r.closest('.loa-opt').classList.remove('sel');});
+    onItpWorkTypeChange();
   }else if(t==='ins'){
     v('ins-date',d);v('ins-code',nextCode('ins'));
     document.getElementById('ins-itpno').value='';v('ins-remark','');
@@ -1486,8 +1484,15 @@ function fillForm(t,r){
     v('itp-date',normDate(r.date));v('itp-code',r.codeITP);document.getElementById('itp-proj').value=r.projectName;
     v('itp-contact',r.contactPerson||'');v('itp-mainblock',r.mainBlock||'');
     v('itp-loc',r.location||'');v('itp-issued',normDate(r.issuedDate||''));
-    v('itp-desc',r.description||'');v('itp-prep',r.preparedBy||'');
-    v('itp-check',r.checkBy||'');v('itp-appr',r.approvedBy||'');
+    v('itp-prep',r.preparedBy||'');v('itp-check',r.checkBy||'');v('itp-appr',r.approvedBy||'Mr. Seng Nora');
+    const descLines=(r.description||'').split('\n');
+    [1,2,3,4,5,6].forEach((_, i)=>v('itp-desc-'+(i+1), descLines[i]||''));
+    const wt=r.workType||'';
+    document.querySelectorAll('input[name="itp-wt"]').forEach(radio=>{
+      radio.checked=radio.value===wt;
+      radio.closest('.loa-opt').classList.toggle('sel',radio.checked);
+    });
+    onItpWorkTypeChange();
     onItpProjChange();
     setTimeout(()=>{document.getElementById('itp-subblock').value=r.subBlock;onItpSubChange();
       setTimeout(()=>{document.getElementById('itp-houseno').value=r.houseNo;document.getElementById('itp-subject').value=r.subject;},50);},50);
@@ -1505,7 +1510,7 @@ function getFormData(t){
   if(t==='dtf') return {code:g('dtf-code'),date:g('dtf-date'),project:document.getElementById('dtf-project').value,subProject:g('dtf-subproject'),docTitle:document.getElementById('dtf-doctitle').value,description:g('dtf-desc'),docNo:g('dtf-docno'),typeDoc:document.getElementById('dtf-typeDoc').value||'',submitBy:g('dtf-submitby'),receivedBy:g('dtf-receivedby'),remark:g('dtf-remark')};
   if(t==='project') return {projectId:g('proj-id'),projectCode:g('proj-code'),projectName:g('proj-name'),location:g('proj-loc'),startDate:g('proj-start'),finishDate:g('proj-end'),status:document.getElementById('proj-status').value};
   if(t==='scope') return {projectId:g('scope-projid'),projectName:document.getElementById('scope-proj').value,loa:g('scope-loa'),typeLoa:document.querySelector('input[name="sc-loa"]:checked')?.value||'Standard',block:g('scope-block'),houseType:g('scope-htype'),houseNo:g('scope-hno'),amount:g('scope-amount')};
-  if(t==='itp') return {date:g('itp-date'),projectName:document.getElementById('itp-proj').value,codeITP:g('itp-code'),contactPerson:g('itp-contact'),mainBlock:g('itp-mainblock'),subBlock:document.getElementById('itp-subblock').value,houseNo:document.getElementById('itp-houseno').value,location:g('itp-loc'),issuedDate:g('itp-issued'),subject:document.getElementById('itp-subject').value,description:g('itp-desc'),preparedBy:g('itp-prep'),checkBy:g('itp-check'),approvedBy:g('itp-appr')};
+  if(t==='itp'){const _wt=document.querySelector('input[name="itp-wt"]:checked')?.value||'';const _desc=[1,2,3,4,5,6].map(i=>g('itp-desc-'+i)).filter(Boolean).join('\n');return {date:g('itp-date'),projectName:document.getElementById('itp-proj').value,codeITP:g('itp-code'),contactPerson:g('itp-contact'),mainBlock:g('itp-mainblock'),subBlock:document.getElementById('itp-subblock').value,houseNo:document.getElementById('itp-houseno').value,location:g('itp-loc'),issuedDate:g('itp-issued'),subject:document.getElementById('itp-subject').value,workType:_wt,description:_desc,preparedBy:g('itp-prep'),checkBy:g('itp-check'),approvedBy:g('itp-appr')};}
   if(t==='ins') return {dateInput:g('ins-date'),project:g('ins-project'),codeINS:g('ins-code'),contactPerson:g('ins-contact'),mainBlock:g('ins-mainblock'),subBlock:g('ins-subblock'),houseNo:g('ins-houseno'),location:g('ins-location'),issuedDate:g('ins-issued'),subject:g('ins-subject'),remark:g('ins-remark'),itpNo:document.getElementById('ins-itpno').value};
   if(t==='checklist') return {typeOfWork:g('cl-type'),codeINS:g('cl-code'),descriptionOfWork:g('cl-desc')};
 }
@@ -1577,6 +1582,32 @@ async function printDTF(i) {
     }
     setTimeout(() => URL.revokeObjectURL(url), 60000);
     toast('✅ PDF រួចរាល់ — ' + (d.filename || 'DTF-form.pdf'), 'success');
+  } catch(e) {
+    toast('❌ ' + e.message, 'error');
+  }
+}
+
+/* ════════════════════════════════
+   PRINT ITP FORM  (via GAS → ITP_FORM tab → PDF)
+════════════════════════════════ */
+async function printITP(i) {
+  const r = (i !== null && i !== undefined) ? DB.itp[i] : null;
+  if (!r) { toast('⚠ ជ្រើស ITP Record ដើម្បី Print', 'warning'); return; }
+  if (DEMO_MODE) { toast('⚠ Print ត្រូវការ Google Sheets connection', 'warning'); return; }
+
+  toast('⏳ កំពុង Generate PDF ពី ITP_FORM...', 'info');
+  try {
+    const d = await gasPost({ action: 'printITP', data: r });
+    const bytes = Uint8Array.from(atob(d.pdf), c => c.charCodeAt(0));
+    const blob  = new Blob([bytes], { type: 'application/pdf' });
+    const url   = URL.createObjectURL(blob);
+    const win   = window.open(url, '_blank');
+    if (!win) {
+      const a = document.createElement('a');
+      a.href = url; a.download = d.filename || 'ITP-form.pdf'; a.click();
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    toast('✅ PDF រួចរាល់ — ' + (d.filename || 'ITP-form.pdf'), 'success');
   } catch(e) {
     toast('❌ ' + e.message, 'error');
   }
