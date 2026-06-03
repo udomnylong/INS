@@ -599,16 +599,16 @@ function handlePrintITP(data) {
     if (data.issuedDate) {
       const dt = new Date(data.issuedDate);
       if (!isNaN(dt)) {
-        const dd = String(dt.getDate()).padStart(2, '0');
-        const mm = String(dt.getMonth() + 1).padStart(2, '0');
-        const yy = String(dt.getFullYear()).slice(-2);
-        issuedStr = dd + '/' + mm + '/' + yy;
+        const dd  = String(dt.getDate()).padStart(2, '0');
+        const mon = MONTHS[dt.getMonth()];
+        const yyyy = dt.getFullYear();
+        issuedStr = dd + ' ' + mon + ' ' + yyyy;   // DD MMM YYYY
       }
     }
     if (data.date) {
       const dt = new Date(data.date);
       if (!isNaN(dt)) {
-        const dd = String(dt.getDate()).padStart(2, '0');
+        const dd  = String(dt.getDate()).padStart(2, '0');
         const mon = MONTHS[dt.getMonth()];
         const yyyy = dt.getFullYear();
         dateB36 = 'Date : ' + dd + ' ' + mon + ' ' + yyyy;
@@ -638,12 +638,12 @@ function handlePrintITP(data) {
       set('D11', 'Request for Inspection and test plan of ' + data.subject);
     }
 
-    // ── Work Type checkboxes B14-B17 ─────────────────────────────
+    // ── Work Type checkboxes C14-C17 ─────────────────────────────
     const wt = data.workType || '';
-    try { tempSheet.getRange('B14').setValue(wt.includes('Structure Work')); } catch(e) {}
-    try { tempSheet.getRange('B15').setValue(wt.includes('Architecture Work')); } catch(e) {}
-    try { tempSheet.getRange('B16').setValue(wt.includes('MEP Work')); } catch(e) {}
-    try { tempSheet.getRange('B17').setValue(wt.includes('Other')); } catch(e) {}
+    try { tempSheet.getRange('C14').setValue(wt === 'Structure Work'); } catch(e) {}
+    try { tempSheet.getRange('C15').setValue(wt === 'Architecture Work'); } catch(e) {}
+    try { tempSheet.getRange('C16').setValue(wt === 'MEP Work'); } catch(e) {}
+    try { tempSheet.getRange('C17').setValue(wt === 'Other'); } catch(e) {}
 
     // ── Description → C21:C26 (split by newline, max 6 rows) ────
     const lines = (data.description || '').split('\n').slice(0, 6);
