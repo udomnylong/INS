@@ -34,7 +34,7 @@ const TAB_CONFIG = {
     ]
   },
   DTF: {
-    headers: ['Code','Date','Project','SubProject','DocumentTitle','Description','DocumentNo','TypeDocument','SubmitBy','ReceivedBy','Remark'],
+    headers: ['Code','Date','ProjectName','SubProject','Transmittal N°','DocumentTitle','Description','Document N°','TypeDocument','SubmitBy','ReceivedBy','Status','Remark'],
     color:   '#34a853',
     sample: []
   },
@@ -494,15 +494,26 @@ function handlePrintDTF(data) {
     ss.setActiveSheet(tempSheet);
     ss.moveActiveSheet(ss.getNumSheets()); // move to last
 
-    // ── Parse date ──────────────────────────────────────────────
+    // ── Parse date (frontend sends DD-MMM-YYYY via fmtDateDMY) ────
+    const MONTHS_S = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     let yy = '', mm = '', dd = '', dateStr = '';
     if (data.date) {
-      const dt = new Date(data.date);
-      if (!isNaN(dt)) {
-        yy = String(dt.getFullYear()).slice(-2); // 2-digit YY
-        mm = String(dt.getMonth() + 1).padStart(2, '0');
-        dd = String(dt.getDate()).padStart(2, '0');
-        dateStr = dd + '/' + mm + '/' + yy;
+      const parts = String(data.date).split('-');
+      if (parts.length === 3 && MONTHS_S.indexOf(parts[1]) >= 0) {
+        // DD-MMM-YYYY format from frontend
+        dd      = parts[0].padStart(2, '0');
+        mm      = String(MONTHS_S.indexOf(parts[1]) + 1).padStart(2, '0');
+        yy      = parts[2].slice(-2);
+        dateStr = data.date; // keep DD-MMM-YYYY for template
+      } else {
+        // Fallback: ISO yyyy-MM-dd
+        const dt = new Date(data.date);
+        if (!isNaN(dt.getTime())) {
+          dd      = String(dt.getDate()).padStart(2, '0');
+          mm      = String(dt.getMonth() + 1).padStart(2, '0');
+          yy      = String(dt.getFullYear()).slice(-2);
+          dateStr = dd + '-' + MONTHS_S[dt.getMonth()] + '-' + dt.getFullYear();
+        }
       }
     }
 
@@ -517,7 +528,7 @@ function handlePrintDTF(data) {
     try {
       tempSheet.getRange('D6').setHorizontalAlignment('center').setVerticalAlignment('middle');
     } catch(e) {}
-    set('J6', data.docNo);
+    set('J6', data.transmittalNo);
     set('L6', data.docTitle);
     set('R6', dateStr);
     set('M9', yy);
@@ -532,6 +543,9 @@ function handlePrintDTF(data) {
     // ── Submit By / Remark ───────────────────────────────────────
     set('C48', data.submitBy);
     set('G48', data.remark);
+
+    // ── Status ───────────────────────────────────────────────────
+    // set('P48', data.status); // Adjust cell to match your template
 
     // ── Type Document checkboxes ─────────────────────────────────
     // cell → matching typeDoc value(s) in our system
@@ -704,7 +718,10 @@ function showWebAppUrl() {
 function addDataValidations() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
 
-  // DTF — TypeDocument dropdown
+  // DTF — TypeDocument dropdown (col I) and Status dropdown (col L)
+  // New header order: A=Code B=Date C=ProjectName D=SubProject E=Transmittal N°
+  //                   F=DocumentTitle G=Description H=Document N° I=TypeDocument
+  //                   J=SubmitBy K=ReceivedBy L=Status M=Remark
   const dtfSheet = ss.getSheetByName('DTF');
   if (dtfSheet) {
     const typeRule = SpreadsheetApp.newDataValidation()
@@ -713,7 +730,11 @@ function addDataValidations() {
         'Comment','Site Instruction','Construction','Replace Drawing',
         'Request','Other: For Action and Request'
       ], true).build();
-    dtfSheet.getRange('H2:H1000').setDataValidation(typeRule);
+    dtfSheet.getRange('I2:I1000').setDataValidation(typeRule);
+
+    const dtfStatusRule = SpreadsheetApp.newDataValidation()
+      .requireValueInList(['Pending','Approved','Rejected','On Hold'], true).build();
+    dtfSheet.getRange('L2:L1000').setDataValidation(dtfStatusRule);
   }
 
   // Project — Status dropdown (col G after adding ProjectCode)

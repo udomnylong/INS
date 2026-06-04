@@ -384,7 +384,7 @@ tbody tr:hover .row-acts{opacity:1;}
         </div>
         <div class="toolbar">
           <div class="search-wrap"><span class="search-icon">🔍</span><input class="search-input" placeholder="ស្វែងរក Code, Project, Title..." oninput="filterTable('tb-dtf',this.value)"></div>
-          <select class="filter-sel" onchange="filterByCol('tb-dtf',7,this.value)">
+          <select class="filter-sel" onchange="filterByCol('tb-dtf',8,this.value)">
             <option value="">Type ទាំងអស់</option>
             <option>Approval</option><option>Signature & Return</option>
             <option>Approved Document Submission</option><option>Comment</option>
@@ -397,8 +397,8 @@ tbody tr:hover .row-acts{opacity:1;}
         <div class="table-card">
           <div class="table-head-bar"><h3>DTF Records</h3><span class="rec-count" id="cnt-dtf">0</span></div>
           <div class="tbl-wrap"><table>
-            <thead><tr><th>Code</th><th>Date</th><th>Project</th><th>Sub-Project</th><th>Document Title</th><th>Doc N°</th><th>Description</th><th>Type Document</th><th>Submit By</th><th>Received By</th><th>Remark</th><th></th></tr></thead>
-            <tbody id="tb-dtf"><tr><td colspan="12" class="loading-row"><div class="spinner"></div> Loading...</td></tr></tbody>
+            <thead><tr><th>Code</th><th>Date</th><th>Project</th><th>Sub-Project</th><th>Transmittal N°</th><th>Document Title</th><th>Doc N°</th><th>Description</th><th>Type Document</th><th>Submit By</th><th>Received By</th><th>Status</th><th>Remark</th><th></th></tr></thead>
+            <tbody id="tb-dtf"><tr><td colspan="14" class="loading-row"><div class="spinner"></div> Loading...</td></tr></tbody>
           </table></div>
         </div>
       </div>
@@ -528,9 +528,10 @@ tbody tr:hover .row-acts{opacity:1;}
         <div class="fg"><label class="fl">Project<span class="req">*</span></label><select class="fs" id="dtf-project" onchange="onDtfProjChange()"><option value="">-- Select Project --</option></select></div>
         <div class="fg"><label class="fl">Sub-Project</label><input class="fi" id="dtf-subproject" placeholder="Sub-Project name"></div>
       </div>
+      <div class="fg"><label class="fl">Transmittal N°</label><input class="fi" id="dtf-transmittalNo" placeholder="DTF-LHB-[ProjectCode]-0001" readonly><div class="fhint">Auto-fill when Project selected · DTF-LHB-[ProjectCode]-[Code]</div></div>
       <div class="fr2">
         <div class="fg"><label class="fl">Document Title</label><select class="fs" id="dtf-doctitle"><option value="">-- Select --</option></select></div>
-        <div class="fg"><label class="fl">Document N°</label><input class="fi" id="dtf-docno" placeholder="DTF-LHB-[ProjectCode]-0001"><div class="fhint">Auto-fill when Project selected</div></div>
+        <div class="fg"><label class="fl">Document N°</label><input class="fi" id="dtf-docno" placeholder="Document N°..."></div>
       </div>
       <div class="fg"><label class="fl">Description</label><textarea class="fta" id="dtf-desc" rows="2" placeholder="លម្អិតអំពីឯកសារ..."></textarea></div>
       <div class="fg">
@@ -552,7 +553,10 @@ tbody tr:hover .row-acts{opacity:1;}
         <div class="fg"><label class="fl">Submit By</label><input class="fi" id="dtf-submitby" placeholder="Name"></div>
         <div class="fg"><label class="fl">Received By</label><input class="fi" id="dtf-receivedby" placeholder="Name"></div>
       </div>
-      <div class="fg"><label class="fl">Remark</label><input class="fi" id="dtf-remark" placeholder="Remark..."></div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Status</label><select class="fs" id="dtf-status"><option value="">-- Select Status --</option><option value="Pending">Pending</option><option value="Approved">Approved</option><option value="Rejected">Rejected</option><option value="On Hold">On Hold</option></select></div>
+        <div class="fg"><label class="fl">Remark</label><input class="fi" id="dtf-remark" placeholder="Remark..."></div>
+      </div>
     </div>
     <div class="modal-ft">
       <button class="btn btn-danger btn-sm" id="dtf-delbtn" style="margin-right:auto;display:none;" onclick="deleteRec('dtf')">🗑 លុប</button>
@@ -764,7 +768,7 @@ tbody tr:hover .row-acts{opacity:1;}
 const CFG = {
   // ── Option A: Google Apps Script Web App (ឆាប់ & ងាយ) ──
   // Deploy Code.gs as Web App → Copy URL here
-  apiUrl: 'https://script.google.com/macros/s/AKfycbxBkSKGm3ki0clz1Elaw4rnZaDZaql3H1W1svgvhE4-7m2hlZLUWYbnV5fB2FhJUURb2A/exec',
+  apiUrl: 'https://script.google.com/macros/s/AKfycbzj38ndF25r0A3A7VsWrsTmStcO95r-dt1CG9bNCXNTGBW4GE5G8j120lQg2ZsrwrUpcg/exec',
   token:  'DMS_SECRET_2026',  // same as SECRET_TOKEN in Code.gs
 
   // ── Option B: Direct Sheets API (ត្រូវការ API Key) ──
@@ -920,6 +924,18 @@ function fmtDate(val) {
   return val;
 }
 
+// Format "yyyy-MM-dd" → "DD-MMM-YYYY" for print templates
+function fmtDateDMY(val) {
+  if (!val || val === '—') return '';
+  const iso = normDate(val);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const [y, m, d] = iso.split('-');
+    return `${d}-${months[parseInt(m, 10) - 1]}-${y}`;
+  }
+  return val;
+}
+
 // Date fields per module (apply normDate on sync)
 const DATE_COLS = {
   dtf:       ['date'],
@@ -1010,7 +1026,7 @@ function buildRowObj(tab, rowArr) {
   const obj = {};
   // Map using GAS header names (PascalCase)
   const gasHeaderMap = {
-    dtf:       ['Code','Date','Project','SubProject','DocumentTitle','Description','DocumentNo','TypeDocument','SubmitBy','ReceivedBy','Remark'],
+    dtf:       ['Code','Date','ProjectName','SubProject','Transmittal N°','DocumentTitle','Description','Document N°','TypeDocument','SubmitBy','ReceivedBy','Status','Remark'],
     project:   ['ProjectID','ProjectCode','ProjectName','Location','StartDate','FinishDate','Status'],
     scope:     ['ProjectID','ProjectName','LOA','TypeLOA','Block','HouseType','HouseNo','Amount'],
     itp:       ['Date','ProjectName','CodeITP','ContactPerson','MainBlock','SubBlock','HouseNo','Location','IssuedDate','Subject','WorkType','Description','PreparedBy','CheckBy','ApprovedBy'],
@@ -1101,7 +1117,7 @@ function onVisibilityChange() {
 }
 
 const COLS = {
-  dtf:       ['code','date','project','subProject','docTitle','description','docNo','typeDoc','submitBy','receivedBy','remark'],
+  dtf:       ['code','date','project','subProject','transmittalNo','docTitle','description','docNo','typeDoc','submitBy','receivedBy','status','remark'],
   project:   ['projectId','projectCode','projectName','location','startDate','finishDate','status'],
   scope:     ['projectId','projectName','loa','typeLoa','block','houseType','houseNo','amount'],
   itp:       ['date','projectName','codeITP','contactPerson','mainBlock','subBlock','houseNo','location','issuedDate','subject','workType','description','preparedBy','checkBy','approvedBy'],
@@ -1216,16 +1232,11 @@ function onInsItpChange(val) {
 function onDtfProjChange() {
   if (editIdx !== null && editIdx !== undefined) return;
   const projName = document.getElementById('dtf-project').value;
-  if (!projName) { v('dtf-docno',''); return; }
+  if (!projName) { v('dtf-transmittalNo',''); return; }
   const proj = DB.project.find(p=>p.projectName===projName);
-  const code = proj ? (proj.projectCode||'XXX') : 'XXX';
-  const prefix = 'DTF-LHB-'+code+'-';
-  const maxNum = DB.dtf.reduce((m,r)=>{
-    if(!r.docNo||!r.docNo.startsWith(prefix)) return m;
-    const n=parseInt(r.docNo.slice(prefix.length))||0;
-    return Math.max(m,n);
-  },0);
-  v('dtf-docno', prefix+String(maxNum+1).padStart(4,'0'));
+  const projCode = proj ? (proj.projectCode||'XXX') : 'XXX';
+  const dtfCode  = g('dtf-code') || nextCode('dtf');
+  v('dtf-transmittalNo', 'DTF-LHB-'+projCode+'-'+dtfCode);
 }
 
 /* ════════════════════════════════
@@ -1262,15 +1273,17 @@ function empty(n) { return `<tr><td colspan="${n}" class="loading-row" style="co
 
 function renderDtf() {
   const tb=document.getElementById('tb-dtf');
-  if(!DB.dtf.length){tb.innerHTML=empty(12);return;}
+  if(!DB.dtf.length){tb.innerHTML=empty(14);return;}
   tb.innerHTML=DB.dtf.map((r,i)=>`
     <tr ondblclick="openModal('dtf',${i})">
       <td class="td-mono">${r.code}</td><td class="td-mono">${fmtDate(r.date)}</td>
       <td class="td-primary td-clip">${r.project}</td><td class="td-muted">${r.subProject||'—'}</td>
+      <td class="td-mono">${r.transmittalNo||'—'}</td>
       <td class="td-muted td-clip">${r.docTitle||'—'}</td><td class="td-mono">${r.docNo||'—'}</td>
       <td class="td-muted td-clip">${r.description||'—'}</td>
       <td><span class="badge b-blue" style="font-size:9px;max-width:120px;overflow:hidden;text-overflow:ellipsis;display:inline-block;">${r.typeDoc||'—'}</span></td>
       <td class="td-muted">${r.submitBy||'—'}</td><td class="td-muted">${r.receivedBy||'—'}</td>
+      <td>${r.status?badge(r.status):'—'}</td>
       <td class="td-muted">${r.remark||'—'}</td>
       <td><div class="row-acts"><button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openModal('dtf',${i})">✏</button><button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();printDTF(${i})" title="Print DTF">🖨</button><button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();confirmDel('dtf',${i})">🗑</button></div></td>
     </tr>`).join('');
@@ -1433,9 +1446,10 @@ function clearForm(t) {
   const d=new Date().toISOString().slice(0,10);
   if(t==='dtf'){
     v('dtf-code',nextCode('dtf'));v('dtf-date',d);
-    ['dtf-project','dtf-subproject','dtf-docno','dtf-desc','dtf-submitby','dtf-receivedby','dtf-remark'].forEach(id=>v(id,''));
+    ['dtf-project','dtf-subproject','dtf-transmittalNo','dtf-docno','dtf-desc','dtf-submitby','dtf-receivedby','dtf-remark'].forEach(id=>v(id,''));
     document.getElementById('dtf-doctitle').value='';
     document.getElementById('dtf-typeDoc').value='';
+    document.getElementById('dtf-status').value='';
   }else if(t==='project'){
     ['proj-id','proj-code','proj-name','proj-loc'].forEach(id=>v(id,''));
     v('proj-start',d);v('proj-end','');document.getElementById('proj-status').value='Active';
@@ -1465,9 +1479,12 @@ function clearForm(t) {
 function fillForm(t,r){
   if(t==='dtf'){
     v('dtf-code',r.code);v('dtf-date',normDate(r.date));document.getElementById('dtf-project').value=r.project;
-    v('dtf-subproject',r.subProject||'');document.getElementById('dtf-doctitle').value=r.docTitle||'';
+    v('dtf-subproject',r.subProject||'');v('dtf-transmittalNo',r.transmittalNo||'');
+    document.getElementById('dtf-doctitle').value=r.docTitle||'';
     v('dtf-docno',r.docNo||'');v('dtf-desc',r.description||'');
-    v('dtf-submitby',r.submitBy||'');v('dtf-receivedby',r.receivedBy||'');v('dtf-remark',r.remark||'');
+    v('dtf-submitby',r.submitBy||'');v('dtf-receivedby',r.receivedBy||'');
+    document.getElementById('dtf-status').value=r.status||'';
+    v('dtf-remark',r.remark||'');
     document.getElementById('dtf-typeDoc').value=r.typeDoc||'';
   }else if(t==='project'){
     v('proj-id',r.projectId);v('proj-code',r.projectCode||'');v('proj-name',r.projectName);v('proj-loc',r.location||'');
@@ -1507,7 +1524,7 @@ function fillForm(t,r){
 function v(id,val){const e=document.getElementById(id);if(e)e.value=val;}
 
 function getFormData(t){
-  if(t==='dtf') return {code:g('dtf-code'),date:g('dtf-date'),project:document.getElementById('dtf-project').value,subProject:g('dtf-subproject'),docTitle:document.getElementById('dtf-doctitle').value,description:g('dtf-desc'),docNo:g('dtf-docno'),typeDoc:document.getElementById('dtf-typeDoc').value||'',submitBy:g('dtf-submitby'),receivedBy:g('dtf-receivedby'),remark:g('dtf-remark')};
+  if(t==='dtf') return {code:g('dtf-code'),date:g('dtf-date'),project:document.getElementById('dtf-project').value,subProject:g('dtf-subproject'),transmittalNo:g('dtf-transmittalNo'),docTitle:document.getElementById('dtf-doctitle').value,description:g('dtf-desc'),docNo:g('dtf-docno'),typeDoc:document.getElementById('dtf-typeDoc').value||'',submitBy:g('dtf-submitby'),receivedBy:g('dtf-receivedby'),status:document.getElementById('dtf-status').value||'',remark:g('dtf-remark')};
   if(t==='project') return {projectId:g('proj-id'),projectCode:g('proj-code'),projectName:g('proj-name'),location:g('proj-loc'),startDate:g('proj-start'),finishDate:g('proj-end'),status:document.getElementById('proj-status').value};
   if(t==='scope') return {projectId:g('scope-projid'),projectName:document.getElementById('scope-proj').value,loa:g('scope-loa'),typeLoa:document.querySelector('input[name="sc-loa"]:checked')?.value||'Standard',block:g('scope-block'),houseType:g('scope-htype'),houseNo:g('scope-hno'),amount:g('scope-amount')};
   if(t==='itp'){const _wt=document.querySelector('input[name="itp-wt"]:checked')?.value||'';const _desc=[1,2,3,4,5,6].map(i=>g('itp-desc-'+i)).filter(Boolean).join('\n');return {date:g('itp-date'),projectName:document.getElementById('itp-proj').value,codeITP:g('itp-code'),contactPerson:g('itp-contact'),mainBlock:g('itp-mainblock'),subBlock:document.getElementById('itp-subblock').value,houseNo:document.getElementById('itp-houseno').value,location:g('itp-loc'),issuedDate:g('itp-issued'),subject:document.getElementById('itp-subject').value,workType:_wt,description:_desc,preparedBy:g('itp-prep'),checkBy:g('itp-check'),approvedBy:g('itp-appr')};}
@@ -1569,7 +1586,8 @@ async function printDTF(i) {
 
   toast('⏳ កំពុង Generate PDF ពី DTF_Form...', 'info');
   try {
-    const d = await gasPost({ action: 'printDTF', data: r });
+    const printData = { ...r, date: fmtDateDMY(r.date) };
+    const d = await gasPost({ action: 'printDTF', data: printData });
     // Decode base64 PDF → Blob → open in new tab
     const bytes  = Uint8Array.from(atob(d.pdf), c => c.charCodeAt(0));
     const blob   = new Blob([bytes], { type: 'application/pdf' });
@@ -1626,7 +1644,7 @@ function filterByCol(id,ci,v){Array.from(document.getElementById(id).rows).forEa
    EXCEL EXPORT
 ════════════════════════════════ */
 const XH={
-  dtf:['Code','Date','Project','Sub-Project','Document Title','Description','Doc N°','Type Document','Submit By','Received By','Remark'],
+  dtf:['Code','Date','Project','Sub-Project','Transmittal N°','Document Title','Description','Doc N°','Type Document','Submit By','Received By','Status','Remark'],
   scope:['Project ID','Project Name','LOA','Type LOA','Block','House Type','House N°','Amount'],
   itp:['Date','Project Name','Code ITP','Contact Person','Main Block','Sub Block','House N°','Location','Issued Date','Subject','Description','Prepared By','Check By','Approved By'],
   ins:['Date Input','Project','Code INS','Contact Person','Main Block','Sub Block','House N°','Location','Issued Date','Subject','Remark','ITP N°'],
