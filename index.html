@@ -21,21 +21,21 @@
 <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;500;600;700&family=Noto+Sans+Khmer:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#0b0f1a;--bg2:#111827;--bg3:#1a2235;--bg4:#1f2b40;
-  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);
-  --text:#e2e8f0;--text2:#94a3b8;--text3:#475569;
-  --accent:#3b82f6;--accent2:#2563eb;--accent-glow:rgba(59,130,246,0.15);
-  --green:#10b981;--green-bg:rgba(16,185,129,0.12);
-  --amber:#f59e0b;--amber-bg:rgba(245,158,11,0.12);
-  --red:#ef4444;--red-bg:rgba(239,68,68,0.12);
-  --purple:#8b5cf6;--purple-bg:rgba(139,92,246,0.12);
-  --teal:#14b8a6;--teal-bg:rgba(20,184,166,0.12);
+  --bg:#f0f4f8;--bg2:#ffffff;--bg3:#e8edf2;--bg4:#d1d9e0;
+  --border:rgba(0,0,0,0.09);--border2:rgba(0,0,0,0.16);
+  --text:#0f172a;--text2:#475569;--text3:#94a3b8;
+  --accent:#3b82f6;--accent2:#2563eb;--accent-glow:rgba(59,130,246,0.12);
+  --green:#059669;--green-bg:rgba(5,150,105,0.1);
+  --amber:#d97706;--amber-bg:rgba(217,119,6,0.1);
+  --red:#dc2626;--red-bg:rgba(220,38,38,0.1);
+  --purple:#7c3aed;--purple-bg:rgba(124,58,237,0.1);
+  --teal:#0d9488;--teal-bg:rgba(13,148,136,0.1);
   --r:8px;--r2:12px;--r3:16px;
   --font-km:'Kantumruy Pro','Noto Sans Khmer',sans-serif;
   --font-en:'Inter',sans-serif;
   --font-mono:'JetBrains Mono',monospace;
-  --shadow:0 4px 32px rgba(0,0,0,0.5);
-  --shadow2:0 2px 12px rgba(0,0,0,0.3);
+  --shadow:0 4px 24px rgba(0,0,0,0.1);
+  --shadow2:0 2px 8px rgba(0,0,0,0.07);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{font-size:15px;}
@@ -764,7 +764,7 @@ tbody tr:hover .row-acts{opacity:1;}
 const CFG = {
   // ── Option A: Google Apps Script Web App (ឆាប់ & ងាយ) ──
   // Deploy Code.gs as Web App → Copy URL here
-  apiUrl: 'https://script.google.com/macros/s/AKfycbxgaFzYiU3jlSgrwVAMf-XfnA12jriw8jXwAEququeH8EFRUSzvOitcsDxGqqAWvrK5jw/exec',
+  apiUrl: 'https://script.google.com/macros/s/AKfycbxBkSKGm3ki0clz1Elaw4rnZaDZaql3H1W1svgvhE4-7m2hlZLUWYbnV5fB2FhJUURb2A/exec',
   token:  'DMS_SECRET_2026',  // same as SECRET_TOKEN in Code.gs
 
   // ── Option B: Direct Sheets API (ត្រូវការ API Key) ──
@@ -1571,17 +1571,18 @@ async function printDTF(i) {
   try {
     const d = await gasPost({ action: 'printDTF', data: r });
     // Decode base64 PDF → Blob → open in new tab
-    const bytes   = Uint8Array.from(atob(d.pdf), c => c.charCodeAt(0));
-    const blob    = new Blob([bytes], { type: 'application/pdf' });
-    const url     = URL.createObjectURL(blob);
-    const win     = window.open(url, '_blank');
-    if (!win) {
-      // Fallback: direct download if popup blocked
-      const a = document.createElement('a');
-      a.href = url; a.download = d.filename || 'DTF-form.pdf'; a.click();
-    }
+    const bytes  = Uint8Array.from(atob(d.pdf), c => c.charCodeAt(0));
+    const blob   = new Blob([bytes], { type: 'application/pdf' });
+    const url    = URL.createObjectURL(blob);
+    const fname  = d.filename || 'DTF.pdf';
+    // Download with correct filename
+    const a = document.createElement('a');
+    a.href = url; a.download = fname;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    // Also open in new tab for viewing
+    window.open(url, '_blank');
     setTimeout(() => URL.revokeObjectURL(url), 60000);
-    toast('✅ PDF រួចរាល់ — ' + (d.filename || 'DTF-form.pdf'), 'success');
+    toast('✅ PDF រួចរាល់ — ' + fname, 'success');
   } catch(e) {
     toast('❌ ' + e.message, 'error');
   }
@@ -1598,16 +1599,18 @@ async function printITP(i) {
   toast('⏳ កំពុង Generate PDF ពី ITP_FORM...', 'info');
   try {
     const d = await gasPost({ action: 'printITP', data: r });
-    const bytes = Uint8Array.from(atob(d.pdf), c => c.charCodeAt(0));
-    const blob  = new Blob([bytes], { type: 'application/pdf' });
-    const url   = URL.createObjectURL(blob);
-    const win   = window.open(url, '_blank');
-    if (!win) {
-      const a = document.createElement('a');
-      a.href = url; a.download = d.filename || 'ITP-form.pdf'; a.click();
-    }
+    const bytes  = Uint8Array.from(atob(d.pdf), c => c.charCodeAt(0));
+    const blob   = new Blob([bytes], { type: 'application/pdf' });
+    const url    = URL.createObjectURL(blob);
+    const fname  = d.filename || 'ITP.pdf';
+    // Download with correct filename
+    const a = document.createElement('a');
+    a.href = url; a.download = fname;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    // Also open in new tab for viewing
+    window.open(url, '_blank');
     setTimeout(() => URL.revokeObjectURL(url), 60000);
-    toast('✅ PDF រួចរាល់ — ' + (d.filename || 'ITP-form.pdf'), 'success');
+    toast('✅ PDF រួចរាល់ — ' + fname, 'success');
   } catch(e) {
     toast('❌ ' + e.message, 'error');
   }

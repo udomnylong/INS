@@ -561,8 +561,9 @@ function handlePrintDTF(data) {
     const url   = 'https://docs.google.com/spreadsheets/d/' + SPREADSHEET_ID +
       '/export?format=pdf&gid=' + gid +
       '&size=A4&portrait=true&fitw=true' +
+      '&top_margin=0.1969&bottom_margin=0.1969&left_margin=0.1969&right_margin=0.3937' +
       '&gridlines=false&printtitle=false&sheetnames=false' +
-      '&pagenumbers=false&attachment=true';
+      '&pagenumbers=false&bg=false&attachment=true';
 
     const resp    = UrlFetchApp.fetch(url, { headers: { Authorization: 'Bearer ' + token } });
     const pdfB64  = Utilities.base64Encode(resp.getContent());
@@ -570,7 +571,7 @@ function handlePrintDTF(data) {
     // ── Clean up temp sheet ──────────────────────────────────────
     ss.deleteSheet(tempSheet);
 
-    return jsonResp({ ok: true, pdf: pdfB64, filename: 'DTF-' + (data.docNo || data.code || 'form') + '.pdf' });
+    return jsonResp({ ok: true, pdf: pdfB64, filename: (data.docNo || data.code || 'DTF') + '.pdf' });
 
   } catch(err) {
     return jsonResp({ ok: false, error: err.toString() });
@@ -668,15 +669,16 @@ function handlePrintITP(data) {
     const url   = 'https://docs.google.com/spreadsheets/d/' + SPREADSHEET_ID +
       '/export?format=pdf&gid=' + gid +
       '&size=A4&portrait=true&fitw=true' +
+      '&top_margin=0.1969&bottom_margin=0.1969&left_margin=0.1969&right_margin=0.3937' +
       '&gridlines=false&printtitle=false&sheetnames=false' +
-      '&pagenumbers=false&attachment=true';
+      '&pagenumbers=false&bg=false&attachment=true';
 
     const resp   = UrlFetchApp.fetch(url, { headers: { Authorization: 'Bearer ' + token } });
     const pdfB64 = Utilities.base64Encode(resp.getContent());
 
     ss.deleteSheet(tempSheet);
 
-    return jsonResp({ ok: true, pdf: pdfB64, filename: 'ITP-' + (data.codeITP || 'form') + '.pdf' });
+    return jsonResp({ ok: true, pdf: pdfB64, filename: (data.codeITP || 'ITP') + '.pdf' });
 
   } catch(err) {
     return jsonResp({ ok: false, error: err.toString() });
