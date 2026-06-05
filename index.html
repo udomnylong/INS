@@ -338,6 +338,10 @@ tbody tr:hover .row-acts{opacity:1;}
         <span class="nav-icon">✅</span> Check List
         <span class="nav-badge" id="nb-cl">0</span>
       </button>
+      <button class="nav-item" onclick="showView('keyperson',this)">
+        <span class="nav-icon">👤</span> Key Person
+        <span class="nav-badge" id="nb-kp">0</span>
+      </button>
       <div class="nav-section">ទូទៅ</div>
       <button class="nav-item" onclick="showView('dashboard',this)">
         <span class="nav-icon">📊</span> Dashboard
@@ -451,8 +455,8 @@ tbody tr:hover .row-acts{opacity:1;}
         <div class="table-card">
           <div class="table-head-bar"><h3>Inspection Plan (ITP)</h3><span class="rec-count" id="cnt-itp">0</span></div>
           <div class="tbl-wrap"><table>
-            <thead><tr><th>Date</th><th>Project</th><th>Code ITP</th><th>Contact Person</th><th>Main Block</th><th>Sub Block</th><th>House N°</th><th>Location</th><th>Issued Date</th><th>Subject</th><th></th></tr></thead>
-            <tbody id="tb-itp"><tr><td colspan="11" class="loading-row"><div class="spinner"></div> Loading...</td></tr></tbody>
+            <thead><tr><th>Date</th><th>Project</th><th>Code ITP</th><th>Contact Person</th><th>Main Block</th><th>Sub Block</th><th>House N°</th><th>Location</th><th>Issued Date</th><th>Subject</th><th>Prepared By</th><th>Position</th><th></th></tr></thead>
+            <tbody id="tb-itp"><tr><td colspan="13" class="loading-row"><div class="spinner"></div> Loading...</td></tr></tbody>
           </table></div>
         </div>
       </div>
@@ -491,6 +495,26 @@ tbody tr:hover .row-acts{opacity:1;}
           <div class="table-head-bar"><h3>Check List</h3><span class="rec-count" id="cnt-cl">0</span></div>
           <table><thead><tr><th>Type of Work</th><th>Code INS</th><th>Description of Work</th><th></th></tr></thead>
           <tbody id="tb-cl"><tr><td colspan="4" class="loading-row"><div class="spinner"></div> Loading...</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- KEYPERSON -->
+      <div class="view" id="view-keyperson">
+        <div class="toolbar">
+          <div class="search-wrap"><span class="search-icon">🔍</span><input class="search-input" placeholder="ស្វែងរក Code, Company, Position..." oninput="filterTable('tb-kp',this.value)"></div>
+          <select class="filter-sel" onchange="filterByCol('tb-kp',5,this.value)">
+            <option value="">Status ទាំងអស់</option>
+            <option>Active</option><option>Inactive</option>
+          </select>
+          <button class="btn btn-sm" onclick="exportExcel('keyperson')">📊 Export Excel</button>
+          <button class="btn btn-sm" onclick="window.print()">🖨 Print</button>
+        </div>
+        <div class="table-card">
+          <div class="table-head-bar"><h3>Key Person List</h3><span class="rec-count" id="cnt-kp">0</span></div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Code</th><th>Name</th><th>Company</th><th>Sex</th><th>Position</th><th>Handle</th><th>Status</th><th>Remark</th><th></th></tr></thead>
+            <tbody id="tb-kp"><tr><td colspan="9" class="loading-row"><div class="spinner"></div> Loading...</td></tr></tbody>
+          </table></div>
         </div>
       </div>
 
@@ -647,7 +671,11 @@ tbody tr:hover .row-acts{opacity:1;}
       </div>
       <div class="fr2">
         <div class="fg"><label class="fl">Project Name<span class="req">*</span></label><select class="fs" id="itp-proj" onchange="onItpProjChange()"><option value="">-- Select --</option></select></div>
-        <div class="fg"><label class="fl">Contact Person</label><input class="fi" id="itp-contact" placeholder="Name"></div>
+        <div class="fg">
+          <label class="fl">Contact Person</label>
+          <input class="fi" id="itp-contact" list="itp-contact-list" placeholder="Select or type name...">
+          <datalist id="itp-contact-list"></datalist>
+        </div>
       </div>
       <div class="fr2">
         <div class="fg"><label class="fl">Main Block</label><input class="fi" id="itp-mainblock" placeholder="Block A"></div>
@@ -659,7 +687,10 @@ tbody tr:hover .row-acts{opacity:1;}
       </div>
       <div class="fr2">
         <div class="fg"><label class="fl">Issued Date</label><input class="fi" id="itp-issued" type="date"></div>
-        <div class="fg"><label class="fl">Subject</label><select class="fs" id="itp-subject"><option value="">-- Select --</option></select></div>
+        <div class="fg" id="itp-subject-wrap" style="display:none;">
+          <label class="fl">Subject</label>
+          <select class="fs" id="itp-subject"><option value="">-- Select --</option></select>
+        </div>
       </div>
       <div class="fg">
         <label class="fl">Work Type</label>
@@ -682,9 +713,19 @@ tbody tr:hover .row-acts{opacity:1;}
         </div>
       </div>
       <div class="fr3">
-        <div class="fg"><label class="fl">Prepared By</label><input class="fi" id="itp-prep" placeholder="Name"></div>
+        <div class="fg">
+          <label class="fl">Prepared By</label>
+          <select class="fs" id="itp-prep" onchange="onItpPrepChange()"><option value="">-- Select --</option></select>
+          <label class="fl" style="margin-top:8px;">Position</label>
+          <input class="fi" id="itp-prep-pos" readonly placeholder="Auto-fill">
+        </div>
         <div class="fg"><label class="fl">Check By</label><input class="fi" id="itp-check" placeholder="Name"></div>
-        <div class="fg"><label class="fl">Approved By</label><input class="fi" id="itp-appr" placeholder="Name" value="Mr. Seng Nora"></div>
+        <div class="fg">
+          <label class="fl">Approved By</label>
+          <select class="fs" id="itp-appr" onchange="onItpApprChange()"><option value="">-- Select --</option></select>
+          <label class="fl" style="margin-top:8px;">Position</label>
+          <input class="fi" id="itp-appr-pos" readonly placeholder="Auto-fill">
+        </div>
       </div>
     </div>
     <div class="modal-ft">
@@ -759,6 +800,49 @@ tbody tr:hover .row-acts{opacity:1;}
   </div>
 </div>
 
+<!-- ══ MODAL KEYPERSON ══ -->
+<div class="modal-backdrop" id="modal-keyperson">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-hd-left"><div class="modal-hd-icon">👤</div><span class="modal-title" id="keyperson-mt">Add Person</span></div>
+      <button class="btn btn-ghost btn-icon" onclick="closeModal('modal-keyperson')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fr2">
+        <div class="fg"><label class="fl">Code Keyperson<span class="req">*</span></label><input class="fi" id="kp-code" readonly><div class="fhint">Auto-generated</div></div>
+        <div class="fg"><label class="fl">Name<span class="req">*</span></label><input class="fi" id="kp-name" placeholder="Full name"></div>
+      </div>
+      <div class="fg"><label class="fl">Company<span class="req">*</span></label><input class="fi" id="kp-company" placeholder="Company name"></div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Sex</label>
+          <select class="fs" id="kp-sex">
+            <option value="">-- Select --</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Position</label><input class="fi" id="kp-position" placeholder="Job Position"></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Handle</label><input class="fi" id="kp-handle" placeholder="Mr. / Mrs. / Eng. ..."></div>
+        <div class="fg"><label class="fl">Status</label>
+          <select class="fs" id="kp-status">
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Remark</label><input class="fi" id="kp-remark" placeholder="Remark..."></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-danger btn-sm" id="keyperson-delbtn" style="margin-right:auto;display:none;" onclick="deleteRec('keyperson')">🗑 លុប</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-keyperson')">បោះបង់</button>
+      <button class="btn btn-primary" onclick="saveRec('keyperson')">💾 Save → Sheets</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast-wrap" id="toastWrap"></div>
 
 <script>
@@ -768,7 +852,7 @@ tbody tr:hover .row-acts{opacity:1;}
 const CFG = {
   // ── Option A: Google Apps Script Web App (ឆាប់ & ងាយ) ──
   // Deploy Code.gs as Web App → Copy URL here
-  apiUrl: 'https://script.google.com/macros/s/AKfycbzj38ndF25r0A3A7VsWrsTmStcO95r-dt1CG9bNCXNTGBW4GE5G8j120lQg2ZsrwrUpcg/exec',
+  apiUrl: 'https://script.google.com/macros/s/AKfycbx0wBpH6YVQ5p98QYjK4pp4ls8ssNK3Cw2T8X08dj0OgrKwcJMMXlAao7G9mWH4EG3m8Q/exec',
   token:  'DMS_SECRET_2026',  // same as SECRET_TOKEN in Code.gs
 
   // ── Option B: Direct Sheets API (ត្រូវការ API Key) ──
@@ -784,6 +868,7 @@ const CFG = {
     ins:       'INS',
     checklist: 'CheckList',
     doctype:   'DocumentType',
+    keyperson: 'Keyperson',
   },
 };
 
@@ -797,7 +882,7 @@ let currentView = 'dtf';
 let editIdx = null;
 let accessToken = null;
 
-let DB = { dtf:[], project:[], scope:[], itp:[], ins:[], checklist:[], docTypes:[], doctype:[] };
+let DB = { dtf:[], project:[], scope:[], itp:[], ins:[], checklist:[], docTypes:[], doctype:[], keyperson:[] };
 
 /* ════════════════════════════════
    LOGIN
@@ -830,6 +915,7 @@ const DEMO_USERS = [
   { username:'sokha',  password:'sokha123',  fullName:'Sokha Chan',  role:'Inspector',     email:'sokha@dms.com',  status:'Active' },
   { username:'dara',   password:'dara123',   fullName:'Dara Meng',   role:'Engineer',      email:'dara@dms.com',   status:'Active' },
   { username:'ratha',  password:'ratha123',  fullName:'Ratha Ly',    role:'Site Manager',  email:'ratha@dms.com',  status:'Active' },
+  { username:'vanna',  password:'vanna123',  fullName:'Vanna Keo',   role:'QC Officer',    email:'vanna@dms.com',  status:'Active' },
 ];
 
 async function validateUser(username, password) {
@@ -945,6 +1031,7 @@ const DATE_COLS = {
   ins:       ['dateInput','issuedDate'],
   checklist: [],
   doctype:   [],
+  keyperson: [],
 };
 
 /* ════════════════════════════════
@@ -1021,19 +1108,9 @@ async function sheetsDeleteRow(tab, rowIdx) {
 
 // ── Build row object {HeaderName: value} ──
 function buildRowObj(tab, rowArr) {
-  const typeKey = Object.keys(CFG.tabs).find(k => CFG.tabs[k] === tab);
-  const cols    = COLS[typeKey] || [];
+  const typeKey  = Object.keys(CFG.tabs).find(k => CFG.tabs[k] === tab);
+  const gasHeaders = GAS_HDR[typeKey] || COLS[typeKey] || [];
   const obj = {};
-  // Map using GAS header names (PascalCase)
-  const gasHeaderMap = {
-    dtf:       ['Code','Date','ProjectName','SubProject','Transmittal N°','DocumentTitle','Description','Document N°','TypeDocument','SubmitBy','ReceivedBy','Status','Remark'],
-    project:   ['ProjectID','ProjectCode','ProjectName','Location','StartDate','FinishDate','Status'],
-    scope:     ['ProjectID','ProjectName','LOA','TypeLOA','Block','HouseType','HouseNo','Amount'],
-    itp:       ['Date','ProjectName','CodeITP','ContactPerson','MainBlock','SubBlock','HouseNo','Location','IssuedDate','Subject','WorkType','Description','PreparedBy','CheckBy','ApprovedBy'],
-    ins:       ['DateInput','Project','CodeINS','ContactPerson','MainBlock','SubBlock','HouseNo','Location','IssuedDate','Subject','Remark','ITPNo'],
-    checklist: ['TypeOfWork','CodeINS','DescriptionOfWork'],
-  };
-  const gasHeaders = gasHeaderMap[typeKey] || cols;
   gasHeaders.forEach((h, i) => obj[h] = rowArr[i] || '');
   return obj;
 }
@@ -1055,7 +1132,7 @@ async function syncAll(silent = false) {
   setSyncState('syncing');
   if (!silent) toast('🔄 Syncing...','info');
   try {
-    await Promise.all(['dtf','project','scope','itp','ins','checklist','doctype'].map(t => syncTab(t)));
+    await Promise.all(['dtf','project','scope','itp','ins','checklist','doctype','keyperson'].map(t => syncTab(t)));
     populateDropdowns();
     renderAll();
     setSyncState('ok');
@@ -1120,16 +1197,50 @@ const COLS = {
   dtf:       ['code','date','project','subProject','transmittalNo','docTitle','description','docNo','typeDoc','submitBy','receivedBy','status','remark'],
   project:   ['projectId','projectCode','projectName','location','startDate','finishDate','status'],
   scope:     ['projectId','projectName','loa','typeLoa','block','houseType','houseNo','amount'],
-  itp:       ['date','projectName','codeITP','contactPerson','mainBlock','subBlock','houseNo','location','issuedDate','subject','workType','description','preparedBy','checkBy','approvedBy'],
+  itp:       ['date','projectName','codeITP','contactPerson','mainBlock','subBlock','houseNo','location','issuedDate','subject','workType','description','preparedBy','preparedByPosition','checkBy','approvedBy','approvedByPosition'],
   ins:       ['dateInput','project','codeINS','contactPerson','mainBlock','subBlock','houseNo','location','issuedDate','subject','remark','itpNo'],
   checklist: ['typeOfWork','codeINS','descriptionOfWork'],
   doctype:   ['documentCode','documentType'],
+  keyperson: ['codeKeyperson','name','company','sex','position','handle','status','remark'],
+};
+
+// Sheet header names (PascalCase, same order as Google Sheet columns)
+const GAS_HDR = {
+  dtf:       ['Code','Date','ProjectName','SubProject','Transmittal N°','DocumentTitle','Description','Document N°','TypeDocument','SubmitBy','ReceivedBy','Status','Remark'],
+  project:   ['ProjectID','ProjectCode','ProjectName','Location','StartDate','FinishDate','Status'],
+  scope:     ['ProjectID','ProjectName','LOA','TypeLOA','Block','HouseType','HouseNo','Amount'],
+  itp:       ['Date','ProjectName','CodeITP','ContactPerson','MainBlock','SubBlock','HouseNo','Location','IssuedDate','Subject','WorkType','Description','PreparedBy','PreparedByPosition','CheckBy','ApprovedBy','ApprovedByPosition'],
+  ins:       ['DateInput','Project','CodeINS','ContactPerson','MainBlock','SubBlock','HouseNo','Location','IssuedDate','Subject','Remark','ITPNo'],
+  checklist: ['TypeOfWork','CodeINS','DescriptionOfWork'],
+  doctype:   ['DocumentCode','DocumentType'],
+  keyperson: ['CodeKeyperson','Name','Company','Sex','Position','Handle','Status','Remark'],
 };
 
 async function syncTab(t) {
   const cols  = COLS[t];
   const dCols = DATE_COLS[t] || [];
-  const rows  = await sheetsRead(CFG.tabs[t]);
+
+  if (CFG.apiUrl) {
+    // GAS path: use header-name mapping (robust, preserves real _row)
+    const d   = await gasGet({ action: 'read', tab: CFG.tabs[t] });
+    const hdr = GAS_HDR[t] || [];
+    DB[t] = (d.data || []).filter(row => row[hdr[0]]).map(row => {
+      const o = { _row: row._row };
+      cols.forEach((c, ci) => {
+        let v = hdr[ci] !== undefined && row[hdr[ci]] !== undefined ? String(row[hdr[ci]]) : '';
+        if (dCols.includes(c)) v = normDate(v);
+        o[c] = v;
+      });
+      if (t === 'dtf' && o.code && /^\d+$/.test(o.code.trim())) {
+        o.code = o.code.trim().padStart(4, '0');
+      }
+      return o;
+    });
+    return;
+  }
+
+  // Direct Sheets API path: positional mapping
+  const rows = await sheetsRead(CFG.tabs[t]);
   DB[t] = rows.filter(r => r[0]).map((r, i) => {
     const o = { _row: i + 2 };
     cols.forEach((c, ci) => {
@@ -1137,7 +1248,6 @@ async function syncTab(t) {
       if (dCols.includes(c)) v = normDate(v);
       o[c] = v;
     });
-    // Pad numeric code for DTF
     if (t === 'dtf' && o.code && /^\d+$/.test(o.code.trim())) {
       o.code = o.code.trim().padStart(4, '0');
     }
@@ -1157,6 +1267,7 @@ function loadSampleData() {
   DB.itp       = [];
   DB.ins       = [];
   DB.dtf       = [];
+  DB.keyperson = [];
 }
 
 /* ════════════════════════════════
@@ -1170,6 +1281,11 @@ function populateDropdowns() {
   fillSel('flt-itp-proj', pNames, true);
   fillSel('flt-ins-proj', pNames, true);
   fillSel('ins-itpno', DB.itp.map(r=>r.codeITP));
+  const kpNames = DB.keyperson.map(r=>r.name).filter(Boolean);
+  const dl = document.getElementById('itp-contact-list');
+  if (dl) dl.innerHTML = kpNames.map(n=>`<option value="${n}">`).join('');
+  fillSel('itp-prep', kpNames, true);
+  fillSel('itp-appr', kpNames, true);
   const subjects = [...new Set(DB.checklist.map(c=>c.descriptionOfWork).filter(Boolean))];
   fillSel('itp-subject', subjects);
   const docTypeNames = DB.doctype.length ? DB.doctype.map(d=>d.documentType).filter(Boolean) : DB.docTypes;
@@ -1214,11 +1330,23 @@ function onItpWorkTypeChange() {
   });
   const sel = document.querySelector('input[name="itp-wt"]:checked');
   const wt  = sel ? sel.value : '';
-  const filtered = wt
-    ? [...new Set(DB.checklist.filter(c=>c.typeOfWork===wt).map(c=>c.descriptionOfWork).filter(Boolean))]
-    : [...new Set(DB.checklist.map(c=>c.descriptionOfWork).filter(Boolean))];
-  fillSel('itp-subject', filtered);
-  document.getElementById('itp-subject').value = '';
+  const wrap = document.getElementById('itp-subject-wrap');
+  if (wrap) wrap.style.display = wt ? '' : 'none';
+  if (wt) {
+    const filtered = [...new Set(DB.checklist.filter(c=>c.typeOfWork===wt).map(c=>c.descriptionOfWork).filter(Boolean))];
+    fillSel('itp-subject', filtered, true);
+    document.getElementById('itp-subject').value = '';
+  }
+}
+function onItpPrepChange() {
+  const name = document.getElementById('itp-prep').value;
+  const kp = DB.keyperson.find(r=>r.name===name);
+  document.getElementById('itp-prep-pos').value = kp ? (kp.position||'') : '';
+}
+function onItpApprChange() {
+  const name = document.getElementById('itp-appr').value;
+  const kp = DB.keyperson.find(r=>r.name===name);
+  document.getElementById('itp-appr-pos').value = kp ? (kp.position||'') : '';
 }
 function onInsItpChange(val) {
   const itp = DB.itp.find(r=>r.codeITP===val);
@@ -1255,6 +1383,10 @@ function nextCode(type) {
     const m = DB.ins.reduce((a,r)=>Math.max(a,parseInt((r.codeINS||'').split('-')[1])||0),0);
     return 'INS-'+String(m+1).padStart(4,'0');
   }
+  if (type==='keyperson') {
+    const m = DB.keyperson.reduce((a,r)=>Math.max(a,parseInt((r.codeKeyperson||'').split('-')[1])||0),0);
+    return 'KP-'+String(m+1).padStart(4,'0');
+  }
   return '';
 }
 
@@ -1262,7 +1394,7 @@ function nextCode(type) {
    RENDER
 ════════════════════════════════ */
 function renderAll() {
-  renderDtf(); renderProject(); renderScope(); renderItp(); renderIns(); renderCl(); renderDash(); updateBadges();
+  renderDtf(); renderProject(); renderScope(); renderItp(); renderIns(); renderCl(); renderKeyperson(); renderDash(); updateBadges();
 }
 
 function badge(s) {
@@ -1320,14 +1452,15 @@ function renderScope() {
 }
 function renderItp() {
   const tb=document.getElementById('tb-itp');
-  if(!DB.itp.length){tb.innerHTML=empty(11);return;}
+  if(!DB.itp.length){tb.innerHTML=empty(13);return;}
   tb.innerHTML=DB.itp.map((r,i)=>`
     <tr ondblclick="openModal('itp',${i})">
       <td class="td-mono">${fmtDate(r.date)}</td><td class="td-primary td-clip">${r.projectName}</td>
-      <td class="td-mono" style="font-size:10px;">${r.codeITP}</td><td class="td-muted">${r.contactPerson}</td>
+      <td class="td-mono" style="font-size:10px;">${r.codeITP}</td><td class="td-muted">${r.contactPerson||'—'}</td>
       <td class="td-muted">${r.mainBlock}</td><td class="td-muted">${r.subBlock}</td>
       <td class="td-mono">${r.houseNo}</td><td class="td-muted">${r.location}</td>
       <td class="td-mono">${fmtDate(r.issuedDate)}</td><td>${badge(r.subject||'—')}</td>
+      <td class="td-muted">${r.preparedBy||'—'}</td><td class="td-muted">${r.preparedByPosition||'—'}</td>
       <td><div class="row-acts"><button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openModal('itp',${i})">✏</button><button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();printITP(${i})" title="Print ITP Form">🖨</button><button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();confirmDel('itp',${i})">🗑</button></div></td>
     </tr>`).join('');
   fillSel('flt-itp-proj',[...new Set(DB.itp.map(r=>r.projectName))],true);
@@ -1367,6 +1500,24 @@ function renderCl() {
   fillSelEl(document.getElementById('flt-cl-type'),types,true);
   document.getElementById('cnt-cl').textContent=DB.checklist.length+' records';
 }
+function renderKeyperson() {
+  const tb=document.getElementById('tb-kp');
+  if(!tb)return;
+  if(!DB.keyperson.length){tb.innerHTML=empty(9);return;}
+  tb.innerHTML=DB.keyperson.map((r,i)=>`
+    <tr ondblclick="openModal('keyperson',${i})">
+      <td class="td-mono">${r.codeKeyperson}</td>
+      <td class="td-primary td-clip">${r.name||'—'}</td>
+      <td class="td-muted td-clip">${r.company||'—'}</td>
+      <td class="td-muted">${r.sex||'—'}</td>
+      <td class="td-muted">${r.position||'—'}</td>
+      <td class="td-muted">${r.handle||'—'}</td>
+      <td>${r.status?badge(r.status):'—'}</td>
+      <td class="td-muted">${r.remark||'—'}</td>
+      <td><div class="row-acts"><button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openModal('keyperson',${i})">✏</button><button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();confirmDel('keyperson',${i})">🗑</button></div></td>
+    </tr>`).join('');
+  document.getElementById('cnt-kp').textContent=DB.keyperson.length+' records';
+}
 function renderDash() {
   document.getElementById('d-dtf').textContent=DB.dtf.length;
   document.getElementById('d-proj').textContent=DB.project.length;
@@ -1390,6 +1541,7 @@ function updateBadges() {
   document.getElementById('nb-itp').textContent=DB.itp.length;
   document.getElementById('nb-ins').textContent=DB.ins.length;
   document.getElementById('nb-cl').textContent=DB.checklist.length;
+  document.getElementById('nb-kp').textContent=DB.keyperson.length;
 }
 
 /* ════════════════════════════════
@@ -1402,6 +1554,7 @@ const VM={
   itp:      {title:'Inspection Plan (ITP)',sub:'Tab IPT · Sheet DC',add:'+ Add New ITP',fn:'itp'},
   ins:      {title:'Inspection (INS)',sub:'Tab INS · Sheet DC',add:'+ Add New INS',fn:'ins'},
   checklist:{title:'Check List',sub:'Tab CheckList · Sheet DC',add:'+ Add New Item',fn:'checklist'},
+  keyperson:{title:'Key Person',sub:'Tab Keyperson · Sheet DC',add:'+ Add Person',fn:'keyperson'},
   dashboard:{title:'Dashboard',sub:'Overview · Sheet DC',add:null,fn:null},
 };
 function showView(name,btn) {
@@ -1421,7 +1574,7 @@ function openAddModal(){const m=VM[currentView];if(m&&m.fn)openModal(m.fn,null);
 /* ════════════════════════════════
    MODALS
 ════════════════════════════════ */
-const MIDS={dtf:'modal-dtf',project:'modal-project',scope:'modal-scope',itp:'modal-itp',ins:'modal-ins',checklist:'modal-checklist'};
+const MIDS={dtf:'modal-dtf',project:'modal-project',scope:'modal-scope',itp:'modal-itp',ins:'modal-ins',checklist:'modal-checklist',keyperson:'modal-keyperson'};
 
 function openModal(type,idx) {
   editIdx=idx;
@@ -1461,19 +1614,23 @@ function clearForm(t) {
     if(def){def.checked=true;def.closest('.loa-opt').classList.add('sel');}
   }else if(t==='itp'){
     v('itp-date',d);v('itp-code',nextCode('itp'));
-    ['itp-proj','itp-contact','itp-mainblock','itp-loc','itp-prep','itp-check'].forEach(id=>v(id,''));
-    v('itp-appr','Mr. Seng Nora');
+    ['itp-contact','itp-proj','itp-mainblock','itp-loc','itp-prep','itp-check','itp-appr','itp-prep-pos','itp-appr-pos'].forEach(id=>v(id,''));
     v('itp-issued',d);document.getElementById('itp-subject').value='';
     document.getElementById('itp-subblock').value='';document.getElementById('itp-houseno').value='';
+    const sw=document.getElementById('itp-subject-wrap');if(sw)sw.style.display='none';
     [1,2,3,4,5,6].forEach(i=>v('itp-desc-'+i,''));
     document.querySelectorAll('input[name="itp-wt"]').forEach(r=>{r.checked=false;r.closest('.loa-opt').classList.remove('sel');});
-    onItpWorkTypeChange();
   }else if(t==='ins'){
     v('ins-date',d);v('ins-code',nextCode('ins'));
     document.getElementById('ins-itpno').value='';v('ins-remark','');
     onInsItpChange('');
   }else if(t==='checklist'){
     ['cl-type','cl-code','cl-desc'].forEach(id=>v(id,''));
+  }else if(t==='keyperson'){
+    v('kp-code',nextCode('keyperson'));
+    ['kp-name','kp-company','kp-handle','kp-position','kp-remark'].forEach(id=>v(id,''));
+    document.getElementById('kp-sex').value='';
+    document.getElementById('kp-status').value='Active';
   }
 }
 function fillForm(t,r){
@@ -1501,7 +1658,12 @@ function fillForm(t,r){
     v('itp-date',normDate(r.date));v('itp-code',r.codeITP);document.getElementById('itp-proj').value=r.projectName;
     v('itp-contact',r.contactPerson||'');v('itp-mainblock',r.mainBlock||'');
     v('itp-loc',r.location||'');v('itp-issued',normDate(r.issuedDate||''));
-    v('itp-prep',r.preparedBy||'');v('itp-check',r.checkBy||'');v('itp-appr',r.approvedBy||'Mr. Seng Nora');
+    setSelVal('itp-prep',r.preparedBy||'');onItpPrepChange();
+    if(!g('itp-prep-pos')&&r.preparedByPosition)v('itp-prep-pos',r.preparedByPosition);
+    v('itp-check',r.checkBy||'');
+    setSelVal('itp-appr',r.approvedBy||'');onItpApprChange();
+    if(!g('itp-appr-pos')&&r.approvedByPosition)v('itp-appr-pos',r.approvedByPosition);
+    const sw=document.getElementById('itp-subject-wrap');if(sw)sw.style.display=r.workType?'':'none';
     const descLines=(r.description||'').split('\n');
     [1,2,3,4,5,6].forEach((_, i)=>v('itp-desc-'+(i+1), descLines[i]||''));
     const wt=r.workType||'';
@@ -1519,21 +1681,35 @@ function fillForm(t,r){
     v('ins-remark',r.remark||'');onInsItpChange(r.itpNo);
   }else if(t==='checklist'){
     v('cl-type',r.typeOfWork);v('cl-code',r.codeINS||'');v('cl-desc',r.descriptionOfWork);
+  }else if(t==='keyperson'){
+    v('kp-code',r.codeKeyperson);v('kp-name',r.name||'');v('kp-company',r.company||'');
+    document.getElementById('kp-sex').value=r.sex||'';
+    v('kp-position',r.position||'');v('kp-handle',r.handle||'');
+    document.getElementById('kp-status').value=r.status||'Active';
+    v('kp-remark',r.remark||'');
   }
 }
 function v(id,val){const e=document.getElementById(id);if(e)e.value=val;}
+function setSelVal(id,val){
+  const el=document.getElementById(id);if(!el)return;
+  if(val&&!Array.from(el.options).some(o=>o.value===val)){
+    const opt=document.createElement('option');opt.value=val;opt.textContent=val;el.appendChild(opt);
+  }
+  el.value=val||'';
+}
 
 function getFormData(t){
   if(t==='dtf') return {code:g('dtf-code'),date:g('dtf-date'),project:document.getElementById('dtf-project').value,subProject:g('dtf-subproject'),transmittalNo:g('dtf-transmittalNo'),docTitle:document.getElementById('dtf-doctitle').value,description:g('dtf-desc'),docNo:g('dtf-docno'),typeDoc:document.getElementById('dtf-typeDoc').value||'',submitBy:g('dtf-submitby'),receivedBy:g('dtf-receivedby'),status:document.getElementById('dtf-status').value||'',remark:g('dtf-remark')};
   if(t==='project') return {projectId:g('proj-id'),projectCode:g('proj-code'),projectName:g('proj-name'),location:g('proj-loc'),startDate:g('proj-start'),finishDate:g('proj-end'),status:document.getElementById('proj-status').value};
   if(t==='scope') return {projectId:g('scope-projid'),projectName:document.getElementById('scope-proj').value,loa:g('scope-loa'),typeLoa:document.querySelector('input[name="sc-loa"]:checked')?.value||'Standard',block:g('scope-block'),houseType:g('scope-htype'),houseNo:g('scope-hno'),amount:g('scope-amount')};
-  if(t==='itp'){const _wt=document.querySelector('input[name="itp-wt"]:checked')?.value||'';const _desc=[1,2,3,4,5,6].map(i=>g('itp-desc-'+i)).filter(Boolean).join('\n');return {date:g('itp-date'),projectName:document.getElementById('itp-proj').value,codeITP:g('itp-code'),contactPerson:g('itp-contact'),mainBlock:g('itp-mainblock'),subBlock:document.getElementById('itp-subblock').value,houseNo:document.getElementById('itp-houseno').value,location:g('itp-loc'),issuedDate:g('itp-issued'),subject:document.getElementById('itp-subject').value,workType:_wt,description:_desc,preparedBy:g('itp-prep'),checkBy:g('itp-check'),approvedBy:g('itp-appr')};}
+  if(t==='itp'){const _wt=document.querySelector('input[name="itp-wt"]:checked')?.value||'';const _desc=[1,2,3,4,5,6].map(i=>g('itp-desc-'+i)).filter(Boolean).join('\n');return {date:g('itp-date'),projectName:document.getElementById('itp-proj').value,codeITP:g('itp-code'),contactPerson:g('itp-contact'),mainBlock:g('itp-mainblock'),subBlock:document.getElementById('itp-subblock').value,houseNo:document.getElementById('itp-houseno').value,location:g('itp-loc'),issuedDate:g('itp-issued'),subject:document.getElementById('itp-subject').value,workType:_wt,description:_desc,preparedBy:g('itp-prep'),preparedByPosition:g('itp-prep-pos'),checkBy:g('itp-check'),approvedBy:g('itp-appr'),approvedByPosition:g('itp-appr-pos')};}
   if(t==='ins') return {dateInput:g('ins-date'),project:g('ins-project'),codeINS:g('ins-code'),contactPerson:g('ins-contact'),mainBlock:g('ins-mainblock'),subBlock:g('ins-subblock'),houseNo:g('ins-houseno'),location:g('ins-location'),issuedDate:g('ins-issued'),subject:g('ins-subject'),remark:g('ins-remark'),itpNo:document.getElementById('ins-itpno').value};
   if(t==='checklist') return {typeOfWork:g('cl-type'),codeINS:g('cl-code'),descriptionOfWork:g('cl-desc')};
+  if(t==='keyperson') return {codeKeyperson:g('kp-code'),name:g('kp-name'),company:g('kp-company'),sex:document.getElementById('kp-sex').value,position:g('kp-position'),handle:g('kp-handle'),status:document.getElementById('kp-status').value||'Active',remark:g('kp-remark')};
 }
 function g(id){const e=document.getElementById(id);return e?e.value.trim():'';}
 
-const REQ={dtf:[['code','Code'],['date','Date'],['project','Project']],project:[['projectId','Project ID'],['projectName','Project Name']],scope:[['projectName','Project']],itp:[['date','Date'],['projectName','Project']],ins:[['dateInput','Date']],checklist:[['typeOfWork','Type of Work'],['descriptionOfWork','Description']]};
+const REQ={dtf:[['code','Code'],['date','Date'],['project','Project']],project:[['projectId','Project ID'],['projectName','Project Name']],scope:[['projectName','Project']],itp:[['date','Date'],['projectName','Project']],ins:[['dateInput','Date']],checklist:[['typeOfWork','Type of Work'],['descriptionOfWork','Description']],keyperson:[['codeKeyperson','Code'],['name','Name'],['company','Company']]};
 
 async function saveRec(t) {
   const rec=getFormData(t);
@@ -1646,9 +1822,10 @@ function filterByCol(id,ci,v){Array.from(document.getElementById(id).rows).forEa
 const XH={
   dtf:['Code','Date','Project','Sub-Project','Transmittal N°','Document Title','Description','Doc N°','Type Document','Submit By','Received By','Status','Remark'],
   scope:['Project ID','Project Name','LOA','Type LOA','Block','House Type','House N°','Amount'],
-  itp:['Date','Project Name','Code ITP','Contact Person','Main Block','Sub Block','House N°','Location','Issued Date','Subject','Description','Prepared By','Check By','Approved By'],
+  itp:['Date','Project Name','Code ITP','Contact Person','Main Block','Sub Block','House N°','Location','Issued Date','Subject','Work Type','Description','Prepared By','Prepared By Position','Check By','Approved By','Approved By Position'],
   ins:['Date Input','Project','Code INS','Contact Person','Main Block','Sub Block','House N°','Location','Issued Date','Subject','Remark','ITP N°'],
   checklist:['Type of Work','Code INS','Description of Work'],
+  keyperson:['Code Keyperson','Name','Company','Sex','Position','Handle','Status','Remark'],
 };
 function exportExcel(t){
   if(!DB[t]?.length){toast('⚠ ទំនេរ','warning');return;}

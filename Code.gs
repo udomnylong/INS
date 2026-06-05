@@ -57,7 +57,7 @@ const TAB_CONFIG = {
     ]
   },
   IPT: {
-    headers: ['Date','ProjectName','CodeITP','ContactPerson','MainBlock','SubBlock','HouseNo','Location','IssuedDate','Subject','WorkType','Description','PreparedBy','CheckBy','ApprovedBy'],
+    headers: ['Date','ProjectName','CodeITP','ContactPerson','MainBlock','SubBlock','HouseNo','Location','IssuedDate','Subject','WorkType','Description','PreparedBy','PreparedByPosition','CheckBy','ApprovedBy','ApprovedByPosition'],
     color:   '#9c27b0',
     sample: []
   },
@@ -93,6 +93,11 @@ const TAB_CONFIG = {
       ['DT-007','Method Statement'],['DT-008','Inspection Request'],['DT-009','Material Submittal'],
       ['DT-010','RFI - Request for Information'],['DT-011','Transmittal Letter'],['DT-012','Site Instruction'],
     ]
+  },
+  Keyperson: {
+    headers: ['CodeKeyperson','Name','Company','Sex','Position','Handle','Status','Remark'],
+    color:   '#e65100',
+    sample:  []
   },
 };
 
@@ -237,15 +242,18 @@ function handleLogin(username, password) {
   // headers: [0]Username [1]Password [2]FullName [3]Role [4]Email [5]Status
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
-    if (r[0] === username && r[1] === password && (r[5] || 'Active') === 'Active') {
+    const rowUser   = r[0] ? r[0].toString().trim() : '';
+    const rowPass   = r[1] ? r[1].toString() : '';
+    const rowStatus = r[5] ? r[5].toString().trim() : 'Active';
+    if (rowUser === username.trim() && rowPass === password && rowStatus.toLowerCase() === 'active') {
       return jsonResp({
         ok:       true,
         user: {
-          username: r[0],
-          fullName: r[2] || r[0],
-          role:     r[3] || 'User',
-          email:    r[4] || '',
-          status:   r[5] || 'Active',
+          username: rowUser,
+          fullName: r[2] ? r[2].toString().trim() : rowUser,
+          role:     r[3] ? r[3].toString().trim() : 'User',
+          email:    r[4] ? r[4].toString().trim() : '',
+          status:   rowStatus,
         }
       });
     }
@@ -351,9 +359,10 @@ function handleGetCodes() {
   return jsonResp({
     ok:   true,
     codes: {
-      dtf: getNextCode('DTF',  1, '',                    4),
-      itp: getNextCode('IPT',  3, 'HE-ANJ-PH1-IPT-LHB-', 4),
-      ins: getNextCode('INS',  3, 'INS-',                 4),
+      dtf: getNextCode('DTF',       1, '',                    4),
+      itp: getNextCode('IPT',       3, 'HE-ANJ-PH1-IPT-LHB-', 4),
+      ins: getNextCode('INS',       3, 'INS-',                 4),
+      kp:  getNextCode('Keyperson', 1, 'KP-',                  4),
     }
   });
 }
@@ -759,6 +768,18 @@ function addDataValidations() {
     const userStatusRule = SpreadsheetApp.newDataValidation()
       .requireValueInList(['Active','Inactive'], true).build();
     userSheet.getRange('F2:F1000').setDataValidation(userStatusRule);
+  }
+
+  // Keyperson — Sex dropdown (col D) and Status dropdown (col G)
+  // Headers: A=CodeKeyperson B=Name C=Company D=Sex E=Position F=Handle G=Status H=Remark
+  const kpSheet = ss.getSheetByName('Keyperson');
+  if (kpSheet) {
+    const sexRule = SpreadsheetApp.newDataValidation()
+      .requireValueInList(['Male','Female','Other'], true).build();
+    kpSheet.getRange('D2:D1000').setDataValidation(sexRule);
+    const kpStatusRule = SpreadsheetApp.newDataValidation()
+      .requireValueInList(['Active','Inactive'], true).build();
+    kpSheet.getRange('G2:G1000').setDataValidation(kpStatusRule);
   }
 
   SpreadsheetApp.getUi().alert('✅ Data Validations added!');
