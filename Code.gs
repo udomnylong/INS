@@ -695,10 +695,10 @@ function handlePrintITP(data) {
     }
 
     // ── Prepared By ──────────────────────────────────────────────
-    // Prepared By → C33 (Name), C34 (Position), C35 (Company via Keyperson lookup)
-    set('C33', 'Name : '     + (data.preparedBy         || ''));
-    set('C34', 'Position : ' + (data.preparedByPosition  || ''));
-    set('C35', kpCompany(data.preparedBy));
+    // Prepared By → B33 (Name), B34 (Position), B35 (Company via Keyperson lookup)
+    set('B33', 'Name : '     + (data.preparedBy         || ''));
+    set('B34', 'Position : ' + (data.preparedByPosition  || ''));
+    set('B35', kpCompany(data.preparedBy));
 
     // Check By → F33
     set('F33', 'Name : ' + (data.checkBy || ''));
