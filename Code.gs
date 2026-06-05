@@ -639,6 +639,11 @@ function handlePrintITP(data) {
       }
     }
 
+    // ── Clear all highlight backgrounds → clean white for print ─
+    try {
+      tempSheet.getDataRange().setBackground('#ffffff');
+    } catch(e) {}
+
     // ── Helper ───────────────────────────────────────────────────
     const set = function(cell, val) {
       if (val !== undefined && val !== null && val !== '') {
