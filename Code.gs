@@ -679,10 +679,34 @@ function handlePrintITP(data) {
       try { tempSheet.getRange('C' + (21 + i)).setValue(lines[i] || ''); } catch(e) {}
     }
 
-    // ── Prepared / Check / Approved By ──────────────────────────
-    set('B33', 'Name : ' + (data.preparedBy || ''));
+    // ── Vlookup Company from Keyperson by Name ───────────────────
+    function kpCompany(name) {
+      if (!name) return '';
+      const kpSheet = ss.getSheetByName('Keyperson');
+      if (!kpSheet || kpSheet.getLastRow() <= 1) return '';
+      const rows = kpSheet.getRange(2, 1, kpSheet.getLastRow() - 1, 3).getValues();
+      // A=CodeKeyperson  B=Name  C=Company
+      for (var ki = 0; ki < rows.length; ki++) {
+        if (rows[ki][1] && rows[ki][1].toString().trim() === name.trim()) {
+          return rows[ki][2] ? rows[ki][2].toString() : '';
+        }
+      }
+      return '';
+    }
+
+    // ── Prepared By ──────────────────────────────────────────────
+    // Prepared By → C33 (Name), C34 (Position), C35 (Company via Keyperson lookup)
+    set('C33', 'Name : '     + (data.preparedBy         || ''));
+    set('C34', 'Position : ' + (data.preparedByPosition  || ''));
+    set('C35', kpCompany(data.preparedBy));
+
+    // Check By → F33
     set('F33', 'Name : ' + (data.checkBy || ''));
-    set('H33', 'Name : ' + (data.approvedBy || 'Mr. Seng Nora'));
+
+    // Approved By → H33 (Name), H34 (Position), H35 (Company via Keyperson lookup)
+    set('H33', 'Name : '     + (data.approvedBy          || ''));
+    set('H34', 'Position : ' + (data.approvedByPosition  || ''));
+    set('H35', kpCompany(data.approvedBy));
 
     SpreadsheetApp.flush();
 

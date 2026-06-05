@@ -852,7 +852,7 @@ tbody tr:hover .row-acts{opacity:1;}
 const CFG = {
   // ── Option A: Google Apps Script Web App (ឆាប់ & ងាយ) ──
   // Deploy Code.gs as Web App → Copy URL here
-  apiUrl: 'https://script.google.com/macros/s/AKfycbx0wBpH6YVQ5p98QYjK4pp4ls8ssNK3Cw2T8X08dj0OgrKwcJMMXlAao7G9mWH4EG3m8Q/exec',
+  apiUrl: 'https://script.google.com/macros/s/AKfycbxEQ24pWCEzW2aW0vTFHVDCfOs1R6TbExyV9Sdi2Gj8rlN50mjvxZwm5Th8mQAG2TJZgA/exec',
   token:  'DMS_SECRET_2026',  // same as SECRET_TOKEN in Code.gs
 
   // ── Option B: Direct Sheets API (ត្រូវការ API Key) ──
@@ -1286,8 +1286,10 @@ function populateDropdowns() {
   if (dl) dl.innerHTML = kpNames.map(n=>`<option value="${n}">`).join('');
   fillSel('itp-prep', kpNames, true);
   fillSel('itp-appr', kpNames, true);
-  const subjects = [...new Set(DB.checklist.map(c=>c.descriptionOfWork).filter(Boolean))];
-  fillSel('itp-subject', subjects);
+  // itp-subject is controlled exclusively by onItpWorkTypeChange (filtered by Work Type)
+  // Re-apply current filter after sync so auto-sync doesn't wipe the filtered list
+  const curWt = document.querySelector('input[name="itp-wt"]:checked');
+  if (curWt) onItpWorkTypeChange();
   const docTypeNames = DB.doctype.length ? DB.doctype.map(d=>d.documentType).filter(Boolean) : DB.docTypes;
   fillSel('dtf-doctitle', docTypeNames);
   // cl type filter (uses typeOfWork, not descriptionOfWork)
@@ -1334,8 +1336,10 @@ function onItpWorkTypeChange() {
   if (wrap) wrap.style.display = wt ? '' : 'none';
   if (wt) {
     const filtered = [...new Set(DB.checklist.filter(c=>c.typeOfWork===wt).map(c=>c.descriptionOfWork).filter(Boolean))];
-    fillSel('itp-subject', filtered, true);
-    document.getElementById('itp-subject').value = '';
+    const subSel = document.getElementById('itp-subject');
+    subSel.innerHTML = '<option value="">-- Select --</option>';
+    filtered.forEach(s=>{ const o=document.createElement('option');o.value=s;o.textContent=s;subSel.appendChild(o); });
+    subSel.value = '';
   }
 }
 function onItpPrepChange() {
