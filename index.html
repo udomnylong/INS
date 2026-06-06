@@ -775,6 +775,7 @@ tbody tr:hover .row-acts{opacity:1;}
     <div class="modal-ft">
       <button class="btn btn-danger btn-sm" id="ins-delbtn" style="margin-right:auto;display:none;" onclick="deleteRec('ins')">🗑 លុប</button>
       <button class="btn btn-ghost" onclick="closeModal('modal-ins')">បោះបង់</button>
+      <button class="btn btn-ghost" id="ins-printbtn" style="display:none;" onclick="printINS(editIdx)">🖨 Print Form</button>
       <button class="btn btn-primary" onclick="saveRec('ins')">💾 Save → Sheets</button>
     </div>
   </div>
@@ -852,7 +853,7 @@ tbody tr:hover .row-acts{opacity:1;}
 const CFG = {
   // ── Option A: Google Apps Script Web App (ឆាប់ & ងាយ) ──
   // Deploy Code.gs as Web App → Copy URL here
-  apiUrl: 'https://script.google.com/macros/s/AKfycbwwgq2U2RHeXxixBMs3MMnzyR8YvvD0xPipxIOYIzjCiFj8sGNkOFcEn2rkPfaxVopZ2w/exec',
+  apiUrl: 'https://script.google.com/macros/s/AKfycbyzGnuNSl2CEh8ViLksctDPnbewiFPwlW_VjNQf6kmcD3ei02Fm_1U2cyi0F4p_MHd4_Q/exec',
   token:  'DMS_SECRET_2026',  // same as SECRET_TOKEN in Code.gs
 
   // ── Option B: Direct Sheets API (ត្រូវការ API Key) ──
@@ -1482,7 +1483,7 @@ function renderIns() {
       <td class="td-mono">${r.houseNo}</td><td class="td-muted">${r.location}</td>
       <td class="td-mono">${fmtDate(r.issuedDate)}</td><td>${badge(r.subject||'—')}</td>
       <td class="td-muted">${r.remark||'—'}</td>
-      <td><div class="row-acts"><button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openModal('ins',${i})">✏</button><button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();confirmDel('ins',${i})">🗑</button></div></td>
+      <td><div class="row-acts"><button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openModal('ins',${i})">✏</button><button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();printINS(${i})" title="Print INS Form">🖨</button><button class="btn btn-danger btn-icon btn-sm" onclick="event.stopPropagation();confirmDel('ins',${i})">🗑</button></div></td>
     </tr>`).join('');
   const projs=[...new Set(DB.ins.map(r=>r.project))];
   fillSel('flt-ins-proj',projs,true);
@@ -1593,6 +1594,8 @@ function openModal(type,idx) {
   if(pb) pb.style.display=(type==='dtf'&&isEdit)?'':'none';
   const ipb=document.getElementById('itp-printbtn');
   if(ipb) ipb.style.display=(type==='itp'&&isEdit)?'':'none';
+  const inspb=document.getElementById('ins-printbtn');
+  if(inspb) inspb.style.display=(type==='ins'&&isEdit)?'':'none';
   if(isEdit) fillForm(type,DB[type][idx]);
   else clearForm(type);
   document.getElementById(MIDS[type]).classList.add('open');
@@ -1806,6 +1809,37 @@ async function printITP(i) {
     a.href = url; a.download = fname;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     // Also open in new tab for viewing
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    toast('✅ PDF រួចរាល់ — ' + fname, 'success');
+  } catch(e) {
+    toast('❌ ' + e.message, 'error');
+  }
+}
+
+/* ════════════════════════════════
+   PRINT INS FORM  (via GAS → AL or SD tab → PDF)
+════════════════════════════════ */
+async function printINS(i) {
+  const r = (i !== null && i !== undefined) ? DB.ins[i] : null;
+  if (!r) { toast('⚠ ជ្រើស INS Record ដើម្បី Print', 'warning'); return; }
+  if (DEMO_MODE) { toast('⚠ Print ត្រូវការ Google Sheets connection', 'warning'); return; }
+  const subject = (r.subject || '').trim();
+  const validSubjects = ['Install Frame & Glass of Aluminum Door &Window and Patition','Steel Door'];
+  if (!validSubjects.includes(subject)) {
+    toast('⚠ Subject "' + subject + '" មិនមាន Form template (ត្រូវការ: AL ឬ SD)', 'warning');
+    return;
+  }
+  toast('⏳ កំពុង Generate PDF ពី ' + (subject === 'Steel Door' ? 'SD' : 'AL') + '_Form...', 'info');
+  try {
+    const d = await gasPost({ action: 'printINS', data: r });
+    const bytes = Uint8Array.from(atob(d.pdf), c => c.charCodeAt(0));
+    const blob  = new Blob([bytes], { type: 'application/pdf' });
+    const url   = URL.createObjectURL(blob);
+    const fname = d.filename || 'INS.pdf';
+    const a = document.createElement('a');
+    a.href = url; a.download = fname;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
     window.open(url, '_blank');
     setTimeout(() => URL.revokeObjectURL(url), 60000);
     toast('✅ PDF រួចរាល់ — ' + fname, 'success');

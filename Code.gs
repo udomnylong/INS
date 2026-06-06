@@ -218,6 +218,7 @@ function doPost(e) {
     if (action === 'login')    return handleLogin(body.username, body.password);
     if (action === 'printDTF') return handlePrintDTF(body.data || {});
     if (action === 'printITP') return handlePrintITP(body.data || {});
+    if (action === 'printINS') return handlePrintINS(body.data || {});
 
     return jsonResp({ ok: false, error: 'Unknown action: ' + action });
   } catch (err) {
@@ -439,7 +440,7 @@ function cleanupTempSheets() {
   let count = 0;
   sheets.forEach(function(sheet) {
     const name = sheet.getName();
-    if (name.startsWith('_DTF_') || name.startsWith('_ITP_')) {
+    if (name.startsWith('_DTF_') || name.startsWith('_ITP_') || name.startsWith('_INS_')) {
       ss.deleteSheet(sheet);
       count++;
     }
@@ -752,6 +753,82 @@ function handlePrintITP(data) {
     return jsonResp({ ok: false, error: err.toString() });
   } finally {
     // Always delete temp sheet — even if PDF export fails
+    if (tempSheet) { try { ss.deleteSheet(tempSheet); } catch(e) {} }
+  }
+}
+
+// ────────────────────────────────────────────────────────────────
+//  PRINT INS FORM  (AL or SD tab → PDF based on Subject)
+// ────────────────────────────────────────────────────────────────
+function handlePrintINS(data) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let tempSheet = null;
+  try {
+    // Choose template tab by subject
+    const subject = (data.subject || '').trim();
+    var templateName;
+    if (subject === 'Install Frame & Glass of Aluminum Door &Window and Patition') {
+      templateName = 'AL';
+    } else if (subject === 'Steel Door') {
+      templateName = 'SD';
+    } else {
+      return jsonResp({ ok: false, error: 'Subject "' + subject + '" មិនមាន Form template (AL / SD)' });
+    }
+
+    const templateSheet = ss.getSheetByName(templateName);
+    if (!templateSheet) return jsonResp({ ok: false, error: templateName + ' tab រកមិនឃើញ' });
+
+    // Copy template → temp sheet
+    tempSheet = templateSheet.copyTo(ss);
+    const tempName = '_INS_' + Date.now();
+    tempSheet.setName(tempName);
+    ss.setActiveSheet(tempSheet);
+    ss.moveActiveSheet(ss.getNumSheets());
+
+    // ── Parse issued date → DD MMM YYYY ─────────────────────────
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var issuedStr = data.issuedDate || '';
+    if (data.issuedDate) {
+      const dt = new Date(data.issuedDate);
+      if (!isNaN(dt)) {
+        issuedStr = String(dt.getDate()).padStart(2,'0') + ' ' + MONTHS[dt.getMonth()] + ' ' + dt.getFullYear();
+      }
+    }
+
+    // ── Fill cells ───────────────────────────────────────────────
+    const set = function(cell, val) {
+      if (val !== undefined && val !== null && val !== '') {
+        try { tempSheet.getRange(cell).setValue(val); } catch(e) {}
+      }
+    };
+    set('C5',  data.contactPerson);  // CONTACT PERSON
+    set('C6',  data.mainBlock);      // MAIN BLOCK
+    set('C7',  data.subBlock);       // SUB BLOCK
+    set('G7',  data.houseNo);        // HOUSE N°
+    set('C8',  data.location);       // LOCATION
+    set('C9',  issuedStr);           // ISSUED DATE
+    set('C10', subject);             // SUBJECT
+
+    SpreadsheetApp.flush();
+
+    // ── Export as PDF ────────────────────────────────────────────
+    const gid   = tempSheet.getSheetId();
+    const token = ScriptApp.getOAuthToken();
+    const url   = 'https://docs.google.com/spreadsheets/d/' + SPREADSHEET_ID +
+      '/export?format=pdf&gid=' + gid +
+      '&size=A4&portrait=true&fitw=true' +
+      '&top_margin=0.1969&bottom_margin=0.1969&left_margin=0.1969&right_margin=0.3937' +
+      '&gridlines=false&printtitle=false&sheetnames=false' +
+      '&pagenumbers=false&bg=false&attachment=true';
+
+    const resp   = UrlFetchApp.fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+    const pdfB64 = Utilities.base64Encode(resp.getContent());
+
+    return jsonResp({ ok: true, pdf: pdfB64, filename: (data.codeINS || 'INS') + '.pdf' });
+
+  } catch(err) {
+    return jsonResp({ ok: false, error: err.toString() });
+  } finally {
     if (tempSheet) { try { ss.deleteSheet(tempSheet); } catch(e) {} }
   }
 }
