@@ -421,14 +421,30 @@ function getNextDTFCode() {
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('🏗 Construction DMS')
-    .addItem('⚙ Setup All Sheets',     'setupSheets')
+    .addItem('⚙ Setup All Sheets',        'setupSheets')
     .addSeparator()
-    .addItem('📊 Export DTF to PDF',    'exportDtfPdf')
-    .addItem('🔄 Refresh All Formats',  'refreshFormats')
+    .addItem('📊 Export DTF to PDF',       'exportDtfPdf')
+    .addItem('🔄 Refresh All Formats',     'refreshFormats')
     .addSeparator()
-    .addItem('👥 Manage Users',         'openUserManager')
-    .addItem('📋 View Web App URL',     'showWebAppUrl')
+    .addItem('🗑 Cleanup Temp Sheets',     'cleanupTempSheets')
+    .addSeparator()
+    .addItem('👥 Manage Users',            'openUserManager')
+    .addItem('📋 View Web App URL',        'showWebAppUrl')
     .addToUi();
+}
+
+function cleanupTempSheets() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheets = ss.getSheets();
+  let count = 0;
+  sheets.forEach(function(sheet) {
+    const name = sheet.getName();
+    if (name.startsWith('_DTF_') || name.startsWith('_ITP_')) {
+      ss.deleteSheet(sheet);
+      count++;
+    }
+  });
+  SpreadsheetApp.getUi().alert('✅ Cleanup Done', 'Deleted ' + count + ' temp sheet(s).', SpreadsheetApp.getUi().ButtonSet.OK);
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -491,13 +507,14 @@ function openUserManager() {
 //  PRINT DTF FORM — copy DTF_Form tab, fill data, export PDF
 // ────────────────────────────────────────────────────────────────
 function handlePrintDTF(data) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let tempSheet = null;
   try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const templateSheet = ss.getSheetByName('DTF_Form');
     if (!templateSheet) return jsonResp({ ok: false, error: 'DTF_Form tab រកមិនឃើញ' });
 
     // Copy template → temp sheet
-    const tempSheet = templateSheet.copyTo(ss);
+    tempSheet = templateSheet.copyTo(ss);
     const tempName  = '_DTF_' + Date.now();
     tempSheet.setName(tempName);
     ss.setActiveSheet(tempSheet);
@@ -591,13 +608,13 @@ function handlePrintDTF(data) {
     const resp    = UrlFetchApp.fetch(url, { headers: { Authorization: 'Bearer ' + token } });
     const pdfB64  = Utilities.base64Encode(resp.getContent());
 
-    // ── Clean up temp sheet ──────────────────────────────────────
-    ss.deleteSheet(tempSheet);
-
     return jsonResp({ ok: true, pdf: pdfB64, filename: (data.docNo || data.code || 'DTF') + '.pdf' });
 
   } catch(err) {
     return jsonResp({ ok: false, error: err.toString() });
+  } finally {
+    // Always delete temp sheet — even if PDF export fails
+    if (tempSheet) { try { ss.deleteSheet(tempSheet); } catch(e) {} }
   }
 }
 
@@ -605,13 +622,14 @@ function handlePrintDTF(data) {
 //  PRINT ITP FORM  (ITP_FORM tab → PDF)
 // ────────────────────────────────────────────────────────────────
 function handlePrintITP(data) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let tempSheet = null;
   try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const templateSheet = ss.getSheetByName('ITP_FORM');
     if (!templateSheet) return jsonResp({ ok: false, error: 'ITP_FORM tab រកមិនឃើញ' });
 
     // Copy template → temp sheet
-    const tempSheet = templateSheet.copyTo(ss);
+    tempSheet = templateSheet.copyTo(ss);
     const tempName  = '_ITP_' + Date.now();
     tempSheet.setName(tempName);
     ss.setActiveSheet(tempSheet);
@@ -728,12 +746,13 @@ function handlePrintITP(data) {
     const resp   = UrlFetchApp.fetch(url, { headers: { Authorization: 'Bearer ' + token } });
     const pdfB64 = Utilities.base64Encode(resp.getContent());
 
-    ss.deleteSheet(tempSheet);
-
     return jsonResp({ ok: true, pdf: pdfB64, filename: (data.codeITP || 'ITP') + '.pdf' });
 
   } catch(err) {
     return jsonResp({ ok: false, error: err.toString() });
+  } finally {
+    // Always delete temp sheet — even if PDF export fails
+    if (tempSheet) { try { ss.deleteSheet(tempSheet); } catch(e) {} }
   }
 }
 
